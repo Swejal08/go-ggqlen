@@ -1,0 +1,24 @@
+type Event {
+  id: ID!
+  name: String!
+  description: String!
+  location: String!
+  startDate: String!
+  endDate: String!
+}
+
+input NewEvent {
+  name: String!
+  description: String!
+  location: String!
+  startDate: String!
+  endDate: String!
+}
+
+type Query {
+  events: [Event!]!
+}
+
+type Mutation {
+  createEvent(input: NewEvent!): Event!
+}
