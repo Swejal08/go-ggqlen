@@ -8,19 +8,19 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Swejal08/go-ggqlen/db"
 	"github.com/Swejal08/go-ggqlen/graph"
 	"github.com/Swejal08/go-ggqlen/graph/model"
+	"github.com/Swejal08/go-ggqlen/initializer"
 	goqu "github.com/doug-martin/goqu/v9"
 )
 
 // CreateEvent is the resolver for the createEvent field.
 func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent) (*model.Event, error) {
-	database := db.GetDB()
+	database := initializer.GetDB()
 
-	dialect := goqu.Dialect("postgres")
+	queryBuilder := initializer.GetQueryBuilder()
 
-	ds := dialect.Insert("event").
+	ds := queryBuilder.Insert("event").
 		Cols("name", "description", "location", "start_date", "end_date").
 		Vals(goqu.Vals{input.Name, input.Description, input.Location, input.StartDate, input.EndDate})
 
@@ -54,9 +54,9 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 
 // Events is the resolver for the events field.
 func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
-	database := db.GetDB()
+	database := initializer.GetDB()
 
-	queryBuilder := db.GetQuilderBuilder()
+	queryBuilder := initializer.GetQueryBuilder()
 
 	ds := queryBuilder.From("event").Select("id", "name", "description", "location", "start_date", "end_date")
 

@@ -1,4 +1,4 @@
-package db
+package initializer
 
 import (
 	"database/sql"
@@ -49,7 +49,7 @@ func GetDB() *sql.DB {
 	return db
 }
 
-func GetQuilderBuilder() goqu.DialectWrapper {
+func GetQueryBuilder() goqu.DialectWrapper {
 	dialect := goqu.Dialect("postgres")
 
 	return dialect

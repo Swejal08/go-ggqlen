@@ -8,16 +8,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Swejal08/go-ggqlen/db"
 	"github.com/Swejal08/go-ggqlen/graph/model"
+	"github.com/Swejal08/go-ggqlen/initializer"
 	goqu "github.com/doug-martin/goqu/v9"
 )
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
-	database := db.GetDB()
+	database := initializer.GetDB()
 
-	queryBuilder := db.GetQuilderBuilder()
+	queryBuilder := initializer.GetQueryBuilder()
 
 	ds := queryBuilder.Insert("user").
 		Cols("name", "email", "phone").
