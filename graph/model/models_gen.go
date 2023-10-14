@@ -2,6 +2,18 @@
 
 package model
 
+import (
+	"fmt"
+	"io"
+	"strconv"
+)
+
+type AssignEventMembership struct {
+	EventID int  `json:"eventId"`
+	UserID  int  `json:"userId"`
+	Role    Role `json:"role"`
+}
+
 type Event struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -9,6 +21,15 @@ type Event struct {
 	Location    string `json:"location"`
 	StartDate   string `json:"startDate"`
 	EndDate     string `json:"endDate"`
+}
+
+type EventMembership struct {
+	ID      string `json:"id"`
+	EventID int    `json:"eventId"`
+	UserID  int    `json:"userId"`
+	Role    Role   `json:"role"`
+	Event   *Event `json:"event"`
+	User    *User  `json:"user"`
 }
 
 type NewEvent struct {
@@ -30,4 +51,49 @@ type User struct {
 	Name  string  `json:"name"`
 	Email string  `json:"email"`
 	Phone *string `json:"phone,omitempty"`
+}
+
+type Role string
+
+const (
+	RoleOwner       Role = "OWNER"
+	RoleContributor Role = "CONTRIBUTOR"
+	RoleAdmin       Role = "ADMIN"
+	RoleAttendee    Role = "ATTENDEE"
+)
+
+var AllRole = []Role{
+	RoleOwner,
+	RoleContributor,
+	RoleAdmin,
+	RoleAttendee,
+}
+
+func (e Role) IsValid() bool {
+	switch e {
+	case RoleOwner, RoleContributor, RoleAdmin, RoleAttendee:
+		return true
+	}
+	return false
+}
+
+func (e Role) String() string {
+	return string(e)
+}
+
+func (e *Role) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Role(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Role", str)
+	}
+	return nil
+}
+
+func (e Role) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
