@@ -1,0 +1,27 @@
+#import "event.graphql"
+#import "user.graphql"
+
+enum Role {
+  owner
+  contributor
+  admin
+  attendee
+}
+
+type EventMembership {
+  id: ID!
+  eventId: Int!
+  userId: Int!
+  role: Role!
+}
+
+input AssignEventMembership {
+  eventId: Int!
+  userId: Int!
+  role: Role!
+}
+
+extend type Mutation {
+  createEventMembership: String
+  assignEventMembership(input: AssignEventMembership!): String
+}

@@ -9,43 +9,18 @@ import (
 	"fmt"
 
 	"github.com/Swejal08/go-ggqlen/graph/model"
-	"github.com/Swejal08/go-ggqlen/initializer"
-	goqu "github.com/doug-martin/goqu/v9"
+	"github.com/Swejal08/go-ggqlen/graph/services"
 )
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
-	database := initializer.GetDB()
-
-	queryBuilder := initializer.GetQueryBuilder()
-
-	ds := queryBuilder.Insert("user").
-		Cols("name", "email", "phone").
-		Vals(goqu.Vals{input.Name, input.Email, input.Phone})
-
-	sql, _, err := ds.ToSQL()
-	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
-	}
-
-	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return nil, err
-	}
+	user, err := services.CreateUser(input)
 
 	if err != nil {
-		fmt.Println("An error occurred while retrieving the last insert ID", err.Error())
-		return nil, err
+		fmt.Println("User cannot be created", err.Error())
 	}
 
-	newEvent := &model.User{
-		ID:    "1",
-		Name:  input.Name,
-		Email: input.Email,
-		Phone: input.Phone,
-	}
-
-	return newEvent, nil
+	return user, nil
 }
 
 // Users is the resolver for the users field.

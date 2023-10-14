@@ -8,48 +8,28 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Swejal08/go-ggqlen/graph"
 	"github.com/Swejal08/go-ggqlen/graph/model"
+	"github.com/Swejal08/go-ggqlen/graph/services"
 	"github.com/Swejal08/go-ggqlen/initializer"
-	goqu "github.com/doug-martin/goqu/v9"
 )
 
 // CreateEvent is the resolver for the createEvent field.
 func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent) (*model.Event, error) {
-	database := initializer.GetDB()
-
-	queryBuilder := initializer.GetQueryBuilder()
-
-	ds := queryBuilder.Insert("event").
-		Cols("name", "description", "location", "start_date", "end_date").
-		Vals(goqu.Vals{input.Name, input.Description, input.Location, input.StartDate, input.EndDate})
-
-	sql, _, err := ds.ToSQL()
-	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
-	}
-
-	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return nil, err
-	}
+	event, err := services.CreateEvent(input)
 
 	if err != nil {
-		fmt.Println("An error occurred while retrieving the last insert ID", err.Error())
-		return nil, err
+		fmt.Println("Event cannot be created", err.Error())
 	}
 
-	newEvent := &model.Event{
-		ID:          "1",
-		Name:        input.Name,
-		Description: input.Description,
-		Location:    input.Location,
-		StartDate:   input.StartDate,
-		EndDate:     input.EndDate,
+	// replace 1 and 1 with  eventId that will come from event and userId from ctx.
+
+	err = services.CreateEventMembership(1, 1, "owner")
+
+	if err != nil {
+		fmt.Println("Event Membership cannot be created", err.Error())
 	}
 
-	return newEvent, nil
-
+	return event, nil
 }
 
 // Events is the resolver for the events field.
@@ -82,8 +62,6 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 			return nil, err
 		}
 
-		fmt.Println(event)
-
 		events = append(events, event)
 
 	}
@@ -96,11 +74,11 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 	return events, nil
 }
 
-// Mutation returns graph.MutationResolver implementation.
-func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
-// Query returns graph.QueryResolver implementation.
-func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
+// Query returns QueryResolver implementation.
+func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
