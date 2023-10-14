@@ -1,8 +1,8 @@
 CREATE TYPE RoleEnum AS ENUM (
-  'Owner',
-  'Admin',
-  'Contributor',
-  'Attendee'
+  'owner',
+  'admin',
+  'contributor',
+  'attendee'
 );
 
 

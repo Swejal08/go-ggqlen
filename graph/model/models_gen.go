@@ -28,8 +28,6 @@ type EventMembership struct {
 	EventID int    `json:"eventId"`
 	UserID  int    `json:"userId"`
 	Role    Role   `json:"role"`
-	Event   *Event `json:"event"`
-	User    *User  `json:"user"`
 }
 
 type NewEvent struct {
@@ -56,10 +54,10 @@ type User struct {
 type Role string
 
 const (
-	RoleOwner       Role = "OWNER"
-	RoleContributor Role = "CONTRIBUTOR"
-	RoleAdmin       Role = "ADMIN"
-	RoleAttendee    Role = "ATTENDEE"
+	RoleOwner       Role = "owner"
+	RoleContributor Role = "contributor"
+	RoleAdmin       Role = "admin"
+	RoleAttendee    Role = "attendee"
 )
 
 var AllRole = []Role{

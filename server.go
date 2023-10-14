@@ -8,7 +8,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 
-	"github.com/Swejal08/go-ggqlen/graph"
+	graph "github.com/Swejal08/go-ggqlen/graph/resolvers"
 	resolvers "github.com/Swejal08/go-ggqlen/graph/resolvers"
 	"github.com/Swejal08/go-ggqlen/initializer"
 	_ "github.com/lib/pq"

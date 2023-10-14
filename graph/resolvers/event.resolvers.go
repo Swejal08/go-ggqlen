@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Swejal08/go-ggqlen/enums"
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
 	"github.com/Swejal08/go-ggqlen/initializer"
@@ -24,7 +23,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 
 	// replace 1 and 1 with  eventId that will come from event and userId from ctx.
 
-	err = services.CreateEventMembership(1, 1, enums.Owner)
+	err = services.CreateEventMembership(1, 1, "owner")
 
 	if err != nil {
 		fmt.Println("Event Membership cannot be created", err.Error())
@@ -62,8 +61,6 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 			fmt.Println("An error occurred while scanning rows", err.Error())
 			return nil, err
 		}
-
-		fmt.Println(event)
 
 		events = append(events, event)
 

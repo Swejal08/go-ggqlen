@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/Swejal08/go-ggqlen/graph/model"
+	"github.com/Swejal08/go-ggqlen/graph/services"
 )
 
 // CreateEventMembership is the resolver for the createEventMembership field.
@@ -18,5 +19,21 @@ func (r *mutationResolver) CreateEventMembership(ctx context.Context) (*string, 
 
 // AssignEventMembership is the resolver for the assignEventMembership field.
 func (r *mutationResolver) AssignEventMembership(ctx context.Context, input model.AssignEventMembership) (*string, error) {
-	panic(fmt.Errorf("not implemented: AssignEventMembership - assignEventMembership"))
+	eventMembership := services.GetEventMembership(input.EventID, input.UserID)
+
+	var err error
+
+	if eventMembership == nil {
+		err = services.CreateEventMembership(input.EventID, input.UserID, input.Role)
+
+	} else {
+		err = services.UpdateEventMembership(input, eventMembership)
+	}
+
+	if err != nil {
+		fmt.Println("Something went wrong when assigning event membership", err.Error())
+	}
+
+	successMessage := "Event Membership has been assigned"
+	return &successMessage, nil
 }

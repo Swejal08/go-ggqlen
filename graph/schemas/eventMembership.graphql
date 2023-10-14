@@ -2,10 +2,10 @@
 #import "user.graphql"
 
 enum Role {
-  OWNER
-  CONTRIBUTOR
-  ADMIN
-  ATTENDEE
+  owner
+  contributor
+  admin
+  attendee
 }
 
 type EventMembership {
@@ -13,8 +13,6 @@ type EventMembership {
   eventId: Int!
   userId: Int!
   role: Role!
-  event: Event!
-  user: User!
 }
 
 input AssignEventMembership {

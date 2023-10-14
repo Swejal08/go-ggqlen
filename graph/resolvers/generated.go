@@ -56,11 +56,9 @@ type ComplexityRoot struct {
 	}
 
 	EventMembership struct {
-		Event   func(childComplexity int) int
 		EventID func(childComplexity int) int
 		ID      func(childComplexity int) int
 		Role    func(childComplexity int) int
-		User    func(childComplexity int) int
 		UserID  func(childComplexity int) int
 	}
 
@@ -156,13 +154,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Event.StartDate(childComplexity), true
 
-	case "EventMembership.event":
-		if e.complexity.EventMembership.Event == nil {
-			break
-		}
-
-		return e.complexity.EventMembership.Event(childComplexity), true
-
 	case "EventMembership.eventId":
 		if e.complexity.EventMembership.EventID == nil {
 			break
@@ -183,13 +174,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EventMembership.Role(childComplexity), true
-
-	case "EventMembership.user":
-		if e.complexity.EventMembership.User == nil {
-			break
-		}
-
-		return e.complexity.EventMembership.User(childComplexity), true
 
 	case "EventMembership.userId":
 		if e.complexity.EventMembership.UserID == nil {
@@ -420,10 +404,10 @@ type Mutation {
 #import "user.graphql"
 
 enum Role {
-  OWNER
-  CONTRIBUTOR
-  ADMIN
-  ATTENDEE
+  owner
+  contributor
+  admin
+  attendee
 }
 
 type EventMembership {
@@ -431,8 +415,6 @@ type EventMembership {
   eventId: Int!
   userId: Int!
   role: Role!
-  event: Event!
-  user: User!
 }
 
 input AssignEventMembership {
@@ -1007,118 +989,6 @@ func (ec *executionContext) fieldContext_EventMembership_role(ctx context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Role does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EventMembership_event(ctx context.Context, field graphql.CollectedField, obj *model.EventMembership) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EventMembership_event(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Event, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Event)
-	fc.Result = res
-	return ec.marshalNEvent2ᚖgithubᚗcomᚋSwejal08ᚋgoᚑggqlenᚋgraphᚋmodelᚐEvent(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_EventMembership_event(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EventMembership",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Event_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Event_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Event_description(ctx, field)
-			case "location":
-				return ec.fieldContext_Event_location(ctx, field)
-			case "startDate":
-				return ec.fieldContext_Event_startDate(ctx, field)
-			case "endDate":
-				return ec.fieldContext_Event_endDate(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Event", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EventMembership_user(ctx context.Context, field graphql.CollectedField, obj *model.EventMembership) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EventMembership_user(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.User, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋSwejal08ᚋgoᚑggqlenᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_EventMembership_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EventMembership",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "name":
-				return ec.fieldContext_User_name(ctx, field)
-			case "email":
-				return ec.fieldContext_User_email(ctx, field)
-			case "phone":
-				return ec.fieldContext_User_phone(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
 	}
 	return fc, nil
@@ -3797,16 +3667,6 @@ func (ec *executionContext) _EventMembership(ctx context.Context, sel ast.Select
 			}
 		case "role":
 			out.Values[i] = ec._EventMembership_role(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "event":
-			out.Values[i] = ec._EventMembership_event(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "user":
-			out.Values[i] = ec._EventMembership_user(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
