@@ -21,7 +21,12 @@ input AssignEventMembership {
   role: Role!
 }
 
+input RemoveEventMembership {
+  eventId: Int!
+  userId: Int!
+}
+
 extend type Mutation {
-  createEventMembership: String
   assignEventMembership(input: AssignEventMembership!): String
+  removeEventMembership(input: RemoveEventMembership!): String
 }

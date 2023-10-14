@@ -12,11 +12,6 @@ import (
 	"github.com/Swejal08/go-ggqlen/graph/services"
 )
 
-// CreateEventMembership is the resolver for the createEventMembership field.
-func (r *mutationResolver) CreateEventMembership(ctx context.Context) (*string, error) {
-	panic(fmt.Errorf("not implemented: CreateEventMembership - createEventMembership"))
-}
-
 // AssignEventMembership is the resolver for the assignEventMembership field.
 func (r *mutationResolver) AssignEventMembership(ctx context.Context, input model.AssignEventMembership) (*string, error) {
 	eventMembership := services.GetEventMembership(input.EventID, input.UserID)
@@ -35,5 +30,17 @@ func (r *mutationResolver) AssignEventMembership(ctx context.Context, input mode
 	}
 
 	successMessage := "Event Membership has been assigned"
+	return &successMessage, nil
+}
+
+// RemoveEventMembership is the resolver for the removeEventMembership field.
+func (r *mutationResolver) RemoveEventMembership(ctx context.Context, input model.RemoveEventMembership) (*string, error) {
+	err := services.RemoveEventMembership(input)
+
+	if err != nil {
+		fmt.Println("Something went wrong when removing event membership", err.Error())
+	}
+
+	successMessage := "Event Membership has been removed"
 	return &successMessage, nil
 }

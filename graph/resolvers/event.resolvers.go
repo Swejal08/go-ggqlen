@@ -7,6 +7,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
@@ -30,6 +31,62 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 	}
 
 	return event, nil
+}
+
+// UpdateEvent is the resolver for the updateEvent field.
+func (r *mutationResolver) UpdateEvent(ctx context.Context, input model.UpdateEvent) (*string, error) {
+	//need to convert db id type to string
+
+	id, err := strconv.Atoi(input.ID)
+
+	if err != nil {
+		fmt.Println("error converting ID to int: %w", err)
+	}
+
+	event, err := services.GetEvent(id)
+
+	if event == nil {
+		return nil, err
+	}
+
+	err = services.UpdateEvent(input)
+
+	if err != nil {
+		fmt.Println("Something went wrong when updating event", err.Error())
+	}
+
+	successMessage := "Event has been updated"
+	return &successMessage, nil
+
+}
+
+// DeleteEvent is the resolver for the deleteEvent field.
+func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEvent) (*string, error) {
+	id, err := strconv.Atoi(input.ID)
+
+	if err != nil {
+		fmt.Println("error converting ID to int: %w", err)
+	}
+
+	event, err := services.GetEvent(id)
+
+	if event == nil {
+		return nil, err
+	}
+
+	/*
+		Todo: Need to soft delete
+		goqu does not have softDelete out of the box
+	*/
+
+	err = services.DeleteEvent(id)
+
+	if err != nil {
+		fmt.Println("Something went wrong when deleting event", err.Error())
+	}
+
+	successMessage := "Event has been deleted"
+	return &successMessage, nil
 }
 
 // Events is the resolver for the events field.

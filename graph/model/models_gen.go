@@ -14,6 +14,10 @@ type AssignEventMembership struct {
 	Role    Role `json:"role"`
 }
 
+type DeleteEvent struct {
+	ID string `json:"id"`
+}
+
 type Event struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -42,6 +46,20 @@ type NewUser struct {
 	Name  string  `json:"name"`
 	Email string  `json:"email"`
 	Phone *string `json:"phone,omitempty"`
+}
+
+type RemoveEventMembership struct {
+	EventID int `json:"eventId"`
+	UserID  int `json:"userId"`
+}
+
+type UpdateEvent struct {
+	ID          string  `json:"id"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Location    *string `json:"location,omitempty"`
+	StartDate   *string `json:"startDate,omitempty"`
+	EndDate     *string `json:"endDate,omitempty"`
 }
 
 type User struct {

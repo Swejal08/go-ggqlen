@@ -84,5 +84,26 @@ func UpdateEventMembership(input model.AssignEventMembership, eventMembership *m
 	}
 
 	return nil
+}
+
+func RemoveEventMembership(input model.RemoveEventMembership) error {
+	database := initializer.GetDB()
+
+	queryBuilder := initializer.GetQueryBuilder()
+
+	ds := queryBuilder.Delete("event_membership").Where(goqu.Ex{"event_id": input.EventID, "user_id": input.UserID})
+
+	sql, _, err := ds.ToSQL()
+
+	if err != nil {
+		fmt.Println("An error occurred while generating the SQL", err.Error())
+	}
+
+	if _, err = database.Exec(sql); err != nil {
+		fmt.Println("An error occurred while executing the SQL", err.Error())
+		return err
+	}
+
+	return nil
 
 }

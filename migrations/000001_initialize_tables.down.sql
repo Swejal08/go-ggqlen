@@ -1,8 +1,8 @@
 ALTER TABLE "Expense" DROP CONSTRAINT "Expense_category_id_fkey";
 ALTER TABLE "Expense" DROP CONSTRAINT "Expense_event_id_fkey";
 
-ALTER TABLE "event_membership" DROP CONSTRAINT "event_membership_event_id_fkey";
-ALTER TABLE "event_membership" DROP CONSTRAINT "event_membership_user_id_fkey";
+ALTER TABLE "event_membership" DROP CONSTRAINT "fk_user_id";
+ALTER TABLE "event_membership" DROP CONSTRAINT "fk_event_id";
 
 -- Drop tables in reverse order
 

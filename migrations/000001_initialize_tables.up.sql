@@ -51,9 +51,9 @@ CREATE TABLE "Category" (
   "updated_at" timestamptz NOT NULL DEFAULT (now())
 );
 
-ALTER TABLE "event_membership" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "event_membership" ADD CONSTRAINT "fk_user_id" FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "event_membership" ADD FOREIGN KEY ("event_id") REFERENCES "event" ("id");
+ALTER TABLE "event_membership" ADD CONSTRAINT "fk_event_id" FOREIGN KEY ("event_id") REFERENCES "event" ("id") ON DELETE CASCADE;
 
 ALTER TABLE "Expense" ADD FOREIGN KEY ("event_id") REFERENCES "event" ("id");
 

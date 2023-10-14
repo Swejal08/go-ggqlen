@@ -15,10 +15,25 @@ input NewEvent {
   endDate: String!
 }
 
+input UpdateEvent {
+  id: ID!
+  name: String
+  description: String
+  location: String
+  startDate: String
+  endDate: String
+}
+
+input DeleteEvent {
+  id: ID!
+}
+
 type Query {
   events: [Event!]!
 }
 
 type Mutation {
   createEvent(input: NewEvent!): Event!
+  updateEvent(input: UpdateEvent!): String
+  deleteEvent(input: DeleteEvent!): String
 }
