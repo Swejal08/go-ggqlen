@@ -10,22 +10,22 @@ import (
 	"github.com/doug-martin/goqu/v9"
 )
 
-var eventFieldMapper = map[string]string{
-	"Name":        "name",
+var expenseFieldMapper = map[string]string{
+	"EventID":     "event_id",
+	"ItemName":    "item_name",
+	"Cost":        "cost",
 	"Description": "description",
-	"Location":    "location",
-	"StartDate":   "start_date",
-	"EndDate":     "end_date",
+	"CategoryId":  "category_id",
 }
 
-func CreateEvent(body model.NewEvent) (*model.Event, error) {
+func CreateExpense(body model.NewExpense) (*model.Expense, error) {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	ds := queryBuilder.Insert("event").
-		Cols("name", "description", "location", "start_date", "end_date").
-		Vals(goqu.Vals{body.Name, body.Description, body.Location, body.StartDate, body.EndDate})
+	ds := queryBuilder.Insert("expense").
+		Cols("event_id", "item_name", "cost", "description", "category_id").
+		Vals(goqu.Vals{body.EventID, body.ItemName, body.Cost, body.Description, body.CategoryID})
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
@@ -37,25 +37,25 @@ func CreateEvent(body model.NewEvent) (*model.Event, error) {
 		return nil, err
 	}
 
-	newEvent := &model.Event{
+	newEvent := &model.Expense{
 		ID:          "1",
-		Name:        body.Name,
+		EventID:     body.EventID,
+		ItemName:    body.ItemName,
+		Cost:        body.Cost,
 		Description: body.Description,
-		Location:    body.Location,
-		StartDate:   body.StartDate,
-		EndDate:     body.EndDate,
+		CategoryID:  body.CategoryID,
 	}
 
 	return newEvent, nil
 
 }
 
-func GetEvent(eventId int) (*model.Event, error) {
+func GetExpense(expenseId int) (*model.Expense, error) {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	sqlQuery, _, err := queryBuilder.Select("id", "name", "description", "location", "start_date", "end_date").From("event").Where(goqu.Ex{"id": eventId}).ToSQL()
+	sqlQuery, _, err := queryBuilder.Select("id", "event_id", "item_name", "cost", "description", "category_id").From("expense").Where(goqu.Ex{"id": expenseId}).ToSQL()
 
 	if err != nil {
 		fmt.Println("An error occurred while generating the SQL", err.Error())
@@ -63,12 +63,12 @@ func GetEvent(eventId int) (*model.Event, error) {
 
 	row := database.QueryRow(sqlQuery)
 
-	event := &model.Event{}
+	expense := &model.Expense{}
 
-	if err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.StartDate, &event.EndDate); err == nil {
-		return event, nil
+	if err := row.Scan(&expense.ID, &expense.EventID, &expense.ItemName, &expense.Cost, &expense.Description, &expense.CategoryID); err == nil {
+		return expense, nil
 	} else if err == sql.ErrNoRows {
-		fmt.Println("No events found", err.Error())
+		fmt.Println("No expense found", err.Error())
 		return nil, err
 	} else {
 		fmt.Println("An error occurred while scanning row", err.Error())
@@ -77,14 +77,14 @@ func GetEvent(eventId int) (*model.Event, error) {
 
 }
 
-func UpdateEvent(body model.UpdateEvent) error {
+func UpdateExpense(body model.UpdateExpense) error {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	record := utils.ConvertInputFieldsToRecord(body, eventFieldMapper)
+	record := utils.ConvertInputFieldsToRecord(body, expenseFieldMapper)
 
-	ds := queryBuilder.Update("event").Set(record).Where(goqu.Ex{"id": body.ID})
+	ds := queryBuilder.Update("expense").Set(record).Where(goqu.Ex{"id": body.ID})
 
 	sql, _, err := ds.ToSQL()
 
@@ -100,12 +100,12 @@ func UpdateEvent(body model.UpdateEvent) error {
 
 }
 
-func DeleteEvent(eventId int) error {
+func DeleteExpense(expenseId int) error {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	ds := queryBuilder.Delete("event").Where(goqu.Ex{"id": eventId})
+	ds := queryBuilder.Delete("expense").Where(goqu.Ex{"id": expenseId})
 
 	sql, _, err := ds.ToSQL()
 

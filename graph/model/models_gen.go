@@ -14,8 +14,23 @@ type AssignEventMembership struct {
 	Role    Role `json:"role"`
 }
 
+type Category struct {
+	ID           string `json:"id"`
+	CategoryName string `json:"categoryName"`
+}
+
+type DeleteCategory struct {
+	EventID int    `json:"eventId"`
+	ID      string `json:"id"`
+}
+
 type DeleteEvent struct {
 	ID string `json:"id"`
+}
+
+type DeleteExpense struct {
+	ID      string `json:"id"`
+	EventID int    `json:"eventId"`
 }
 
 type Event struct {
@@ -34,12 +49,34 @@ type EventMembership struct {
 	Role    Role   `json:"role"`
 }
 
+type Expense struct {
+	ID          string  `json:"id"`
+	EventID     int     `json:"eventId"`
+	ItemName    string  `json:"itemName"`
+	Cost        int     `json:"cost"`
+	Description *string `json:"description,omitempty"`
+	CategoryID  int     `json:"categoryId"`
+}
+
+type NewCategory struct {
+	EventID      int    `json:"eventId"`
+	CategoryName string `json:"categoryName"`
+}
+
 type NewEvent struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Location    string `json:"location"`
 	StartDate   string `json:"startDate"`
 	EndDate     string `json:"endDate"`
+}
+
+type NewExpense struct {
+	EventID     int     `json:"eventId"`
+	ItemName    string  `json:"itemName"`
+	Cost        int     `json:"cost"`
+	Description *string `json:"description,omitempty"`
+	CategoryID  int     `json:"categoryId"`
 }
 
 type NewUser struct {
@@ -53,6 +90,12 @@ type RemoveEventMembership struct {
 	UserID  int `json:"userId"`
 }
 
+type UpdateCategory struct {
+	ID           string  `json:"id"`
+	EventID      int     `json:"eventId"`
+	CategoryName *string `json:"categoryName,omitempty"`
+}
+
 type UpdateEvent struct {
 	ID          string  `json:"id"`
 	Name        *string `json:"name,omitempty"`
@@ -60,6 +103,15 @@ type UpdateEvent struct {
 	Location    *string `json:"location,omitempty"`
 	StartDate   *string `json:"startDate,omitempty"`
 	EndDate     *string `json:"endDate,omitempty"`
+}
+
+type UpdateExpense struct {
+	ID          string  `json:"id"`
+	EventID     int     `json:"eventId"`
+	ItemName    *string `json:"itemName,omitempty"`
+	Cost        *int    `json:"cost,omitempty"`
+	Description *string `json:"description,omitempty"`
+	CategoryID  *int    `json:"categoryId,omitempty"`
 }
 
 type User struct {

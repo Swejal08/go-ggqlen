@@ -1,0 +1,36 @@
+type Expense {
+  id: ID!
+  eventId: Int!
+  itemName: String!
+  cost: Int!
+  description: String
+  categoryId: Int!
+}
+
+input NewExpense {
+  eventId: Int!
+  itemName: String!
+  cost: Int!
+  description: String
+  categoryId: Int!
+}
+
+input UpdateExpense {
+  id: ID!
+  eventId: Int!
+  itemName: String
+  cost: Int
+  description: String
+  categoryId: Int
+}
+
+input DeleteExpense {
+  id: ID!
+  eventId: Int!
+}
+
+extend type Mutation {
+  createExpense(input: NewExpense!): Expense!
+  updateExpense(input: UpdateExpense!): String
+  deleteExpense(input: DeleteExpense!): String
+}

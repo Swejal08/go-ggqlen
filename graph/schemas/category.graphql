@@ -1,0 +1,26 @@
+type Category {
+  id: ID!
+  categoryName: String!
+}
+
+input NewCategory {
+  eventId: Int!
+  categoryName: String!
+}
+
+input UpdateCategory {
+  id: ID!
+  eventId: Int!
+  categoryName: String
+}
+
+input DeleteCategory {
+  eventId: Int!
+  id: ID!
+}
+
+extend type Mutation {
+  createCategory(input: NewCategory!): Category!
+  updateCategory(input: UpdateCategory!): String
+  deleteCategory(input: DeleteCategory!): String
+}

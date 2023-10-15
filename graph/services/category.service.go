@@ -10,22 +10,18 @@ import (
 	"github.com/doug-martin/goqu/v9"
 )
 
-var eventFieldMapper = map[string]string{
-	"Name":        "name",
-	"Description": "description",
-	"Location":    "location",
-	"StartDate":   "start_date",
-	"EndDate":     "end_date",
+var categoryFieldMapper = map[string]string{
+	"CategoryName": "category_name",
 }
 
-func CreateEvent(body model.NewEvent) (*model.Event, error) {
+func CreateCategory(body model.NewCategory) (*model.Category, error) {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	ds := queryBuilder.Insert("event").
-		Cols("name", "description", "location", "start_date", "end_date").
-		Vals(goqu.Vals{body.Name, body.Description, body.Location, body.StartDate, body.EndDate})
+	ds := queryBuilder.Insert("category").
+		Cols("category_name").
+		Vals(goqu.Vals{body.CategoryName})
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
@@ -37,25 +33,21 @@ func CreateEvent(body model.NewEvent) (*model.Event, error) {
 		return nil, err
 	}
 
-	newEvent := &model.Event{
-		ID:          "1",
-		Name:        body.Name,
-		Description: body.Description,
-		Location:    body.Location,
-		StartDate:   body.StartDate,
-		EndDate:     body.EndDate,
+	newCategory := &model.Category{
+		ID:           "1",
+		CategoryName: body.CategoryName,
 	}
 
-	return newEvent, nil
+	return newCategory, nil
 
 }
 
-func GetEvent(eventId int) (*model.Event, error) {
+func GetCategory(categoryId int) (*model.Category, error) {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	sqlQuery, _, err := queryBuilder.Select("id", "name", "description", "location", "start_date", "end_date").From("event").Where(goqu.Ex{"id": eventId}).ToSQL()
+	sqlQuery, _, err := queryBuilder.Select("id", "category_name").From("category").Where(goqu.Ex{"id": categoryId}).ToSQL()
 
 	if err != nil {
 		fmt.Println("An error occurred while generating the SQL", err.Error())
@@ -63,12 +55,12 @@ func GetEvent(eventId int) (*model.Event, error) {
 
 	row := database.QueryRow(sqlQuery)
 
-	event := &model.Event{}
+	category := &model.Category{}
 
-	if err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.StartDate, &event.EndDate); err == nil {
-		return event, nil
+	if err := row.Scan(&category.ID, &category.CategoryName); err == nil {
+		return category, nil
 	} else if err == sql.ErrNoRows {
-		fmt.Println("No events found", err.Error())
+		fmt.Println("No category found", err.Error())
 		return nil, err
 	} else {
 		fmt.Println("An error occurred while scanning row", err.Error())
@@ -77,14 +69,14 @@ func GetEvent(eventId int) (*model.Event, error) {
 
 }
 
-func UpdateEvent(body model.UpdateEvent) error {
+func UpdateCategory(body model.UpdateCategory) error {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	record := utils.ConvertInputFieldsToRecord(body, eventFieldMapper)
+	record := utils.ConvertInputFieldsToRecord(body, categoryFieldMapper)
 
-	ds := queryBuilder.Update("event").Set(record).Where(goqu.Ex{"id": body.ID})
+	ds := queryBuilder.Update("category").Set(record).Where(goqu.Ex{"id": body.ID})
 
 	sql, _, err := ds.ToSQL()
 
@@ -100,12 +92,12 @@ func UpdateEvent(body model.UpdateEvent) error {
 
 }
 
-func DeleteEvent(eventId int) error {
+func DeleteCategory(categoryId int) error {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	ds := queryBuilder.Delete("event").Where(goqu.Ex{"id": eventId})
+	ds := queryBuilder.Delete("category").Where(goqu.Ex{"id": categoryId})
 
 	sql, _, err := ds.ToSQL()
 

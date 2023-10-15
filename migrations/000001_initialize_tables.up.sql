@@ -1,5 +1,4 @@
 CREATE TYPE RoleEnum AS ENUM (
-  'owner',
   'admin',
   'contributor',
   'attendee'
@@ -35,7 +34,7 @@ CREATE TABLE "event_membership" (
   "updated_at" timestamptz NOT NULL DEFAULT (now())
 );
 
-CREATE TABLE "Expense" (
+CREATE TABLE "expense" (
   "id" bigserial PRIMARY KEY,
   "event_id" bigint NOT NULL,
   "item_name" varchar NOT NULL,
@@ -44,17 +43,17 @@ CREATE TABLE "Expense" (
   "category_id" bigint NOT NULL
 );
 
-CREATE TABLE "Category" (
+CREATE TABLE "category" (
   "id" bigserial PRIMARY KEY,
   "category_name" varchar NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT (now())
 );
 
-ALTER TABLE "event_membership" ADD CONSTRAINT "fk_user_id" FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE;
+ALTER TABLE "event_membership" ADD CONSTRAINT "fk_user_id_event_membership" FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "event_membership" ADD CONSTRAINT "fk_event_id" FOREIGN KEY ("event_id") REFERENCES "event" ("id") ON DELETE CASCADE;
+ALTER TABLE "event_membership" ADD CONSTRAINT "fk_event_id_event_membership" FOREIGN KEY ("event_id") REFERENCES "event" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "Expense" ADD FOREIGN KEY ("event_id") REFERENCES "event" ("id");
+ALTER TABLE "expense" ADD CONSTRAINT "fk_event_id_expense" FOREIGN KEY ("event_id") REFERENCES "event" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "Expense" ADD FOREIGN KEY ("category_id") REFERENCES "Category" ("id");
+ALTER TABLE "expense" ADD CONSTRAINT "fk_category_id_expense" FOREIGN KEY ("category_id") REFERENCES "category" ("id") ON DELETE CASCADE;

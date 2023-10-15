@@ -60,7 +60,6 @@ func (r *mutationResolver) AssignEventMembership(ctx context.Context, input mode
 
 // RemoveEventMembership is the resolver for the removeEventMembership field.
 func (r *mutationResolver) RemoveEventMembership(ctx context.Context, input model.RemoveEventMembership) (*string, error) {
-
 	userId := ctx.Value("userId").(string)
 
 	uId, err := strconv.Atoi(userId)
