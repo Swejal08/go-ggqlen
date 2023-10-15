@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strconv"
 
+	accessControl "github.com/Swejal08/go-ggqlen/access-control"
+	"github.com/Swejal08/go-ggqlen/enums"
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
 	"github.com/Swejal08/go-ggqlen/initializer"
@@ -24,7 +26,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 
 	// replace 1 and 1 with  eventId that will come from event and userId from ctx.
 
-	err = services.CreateEventMembership(1, 1, "owner")
+	err = services.CreateEventMembership(1, 1, "admin")
 
 	if err != nil {
 		fmt.Println("Event Membership cannot be created", err.Error())
@@ -35,6 +37,24 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 
 // UpdateEvent is the resolver for the updateEvent field.
 func (r *mutationResolver) UpdateEvent(ctx context.Context, input model.UpdateEvent) (*string, error) {
+	userId := ctx.Value("userId").(string)
+
+	uId, err := strconv.Atoi(userId)
+
+	eventId, err := strconv.Atoi(input.ID)
+
+	if err != nil {
+		fmt.Println("error converting ID to int: %w", err)
+	}
+
+	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
+
+	hasAccess := accessControl.Check(allowedRoles, uId, eventId)
+
+	if !hasAccess {
+		panic("Access denied")
+	}
+
 	//need to convert db id type to string
 
 	id, err := strconv.Atoi(input.ID)
@@ -57,11 +77,28 @@ func (r *mutationResolver) UpdateEvent(ctx context.Context, input model.UpdateEv
 
 	successMessage := "Event has been updated"
 	return &successMessage, nil
-
 }
 
 // DeleteEvent is the resolver for the deleteEvent field.
 func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEvent) (*string, error) {
+	userId := ctx.Value("userId").(string)
+
+	uId, err := strconv.Atoi(userId)
+
+	eventId, err := strconv.Atoi(input.ID)
+
+	if err != nil {
+		fmt.Println("error converting ID to int: %w", err)
+	}
+
+	allowedRoles := []enums.EventMembershipRole{enums.Admin}
+
+	hasAccess := accessControl.Check(allowedRoles, uId, eventId)
+
+	if !hasAccess {
+		panic("Access denied")
+	}
+
 	id, err := strconv.Atoi(input.ID)
 
 	if err != nil {

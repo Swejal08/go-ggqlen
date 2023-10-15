@@ -72,14 +72,12 @@ type User struct {
 type Role string
 
 const (
-	RoleOwner       Role = "owner"
 	RoleContributor Role = "contributor"
 	RoleAdmin       Role = "admin"
 	RoleAttendee    Role = "attendee"
 )
 
 var AllRole = []Role{
-	RoleOwner,
 	RoleContributor,
 	RoleAdmin,
 	RoleAttendee,
@@ -87,7 +85,7 @@ var AllRole = []Role{
 
 func (e Role) IsValid() bool {
 	switch e {
-	case RoleOwner, RoleContributor, RoleAdmin, RoleAttendee:
+	case RoleContributor, RoleAdmin, RoleAttendee:
 		return true
 	}
 	return false

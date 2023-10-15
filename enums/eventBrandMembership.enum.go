@@ -3,16 +3,14 @@ package enums
 type EventMembershipRole int
 
 const (
-	Owner EventMembershipRole = iota
-	Admin
+	Admin EventMembershipRole = iota
 	Contributor
 	Attendee
 )
 
 func GetRoleDescription(role int) string {
 	switch role {
-	case int(Owner):
-		return "owner"
+
 	case int(Admin):
 		return "admin"
 	case int(Contributor):

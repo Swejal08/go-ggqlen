@@ -7,16 +7,41 @@ package graph
 import (
 	"context"
 	"fmt"
+	"strconv"
 
+	accessControl "github.com/Swejal08/go-ggqlen/access-control"
+	"github.com/Swejal08/go-ggqlen/enums"
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
 )
 
 // AssignEventMembership is the resolver for the assignEventMembership field.
 func (r *mutationResolver) AssignEventMembership(ctx context.Context, input model.AssignEventMembership) (*string, error) {
-	eventMembership := services.GetEventMembership(input.EventID, input.UserID)
+	userId := ctx.Value("userId").(string)
 
 	var err error
+
+	uId, err := strconv.Atoi(userId)
+
+	if err != nil {
+		fmt.Println("error converting ID to int: %w", err)
+	}
+
+	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
+
+	hasAccess := accessControl.Check(allowedRoles, uId, input.EventID)
+
+	if !hasAccess {
+		panic("Access denied")
+	}
+
+	membership := services.GetEventMembership(input.EventID, uId)
+
+	if string(membership.Role) == enums.GetRoleDescription(int(enums.Contributor)) && input.Role != model.Role(enums.GetRoleDescription(int(enums.Attendee))) {
+		panic("Contributor can only invite Attendees")
+	}
+
+	eventMembership := services.GetEventMembership(input.EventID, input.UserID)
 
 	if eventMembership == nil {
 		err = services.CreateEventMembership(input.EventID, input.UserID, input.Role)
@@ -35,7 +60,24 @@ func (r *mutationResolver) AssignEventMembership(ctx context.Context, input mode
 
 // RemoveEventMembership is the resolver for the removeEventMembership field.
 func (r *mutationResolver) RemoveEventMembership(ctx context.Context, input model.RemoveEventMembership) (*string, error) {
-	err := services.RemoveEventMembership(input)
+
+	userId := ctx.Value("userId").(string)
+
+	uId, err := strconv.Atoi(userId)
+
+	if err != nil {
+		fmt.Println("error converting ID to int: %w", err)
+	}
+
+	allowedRoles := []enums.EventMembershipRole{enums.Admin}
+
+	hasAccess := accessControl.Check(allowedRoles, uId, input.EventID)
+
+	if !hasAccess {
+		panic("Access denied")
+	}
+
+	err = services.RemoveEventMembership(input)
 
 	if err != nil {
 		fmt.Println("Something went wrong when removing event membership", err.Error())

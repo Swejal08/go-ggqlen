@@ -455,7 +455,6 @@ type Mutation {
 #import "user.graphql"
 
 enum Role {
-  owner
   contributor
   admin
   attendee
