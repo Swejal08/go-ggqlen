@@ -6,6 +6,7 @@ import (
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/initializer"
 	"github.com/doug-martin/goqu/v9"
+	"github.com/google/uuid"
 )
 
 func CreateUser(body model.NewUser) (*model.User, error) {
@@ -13,9 +14,11 @@ func CreateUser(body model.NewUser) (*model.User, error) {
 
 	queryBuilder := initializer.GetQueryBuilder()
 
+	newId := uuid.New()
+
 	ds := queryBuilder.Insert("user").
-		Cols("name", "email", "phone").
-		Vals(goqu.Vals{body.Name, body.Email, body.Phone})
+		Cols("id", "name", "email", "phone").
+		Vals(goqu.Vals{newId, body.Name, body.Email, body.Phone})
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
@@ -28,7 +31,7 @@ func CreateUser(body model.NewUser) (*model.User, error) {
 	}
 
 	newEvent := &model.User{
-		ID:    "1",
+		ID:    newId.String(),
 		Name:  body.Name,
 		Email: body.Email,
 		Phone: body.Phone,

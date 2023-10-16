@@ -7,7 +7,6 @@ package graph
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	accessControl "github.com/Swejal08/go-ggqlen/access-control"
 	"github.com/Swejal08/go-ggqlen/enums"
@@ -19,15 +18,9 @@ import (
 func (r *mutationResolver) CreateCategory(ctx context.Context, input model.NewCategory) (*model.Category, error) {
 	userId := ctx.Value("userId").(string)
 
-	uId, err := strconv.Atoi(userId)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, input.EventID)
+	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if !hasAccess {
 		panic("Access denied")
@@ -46,23 +39,15 @@ func (r *mutationResolver) CreateCategory(ctx context.Context, input model.NewCa
 func (r *mutationResolver) UpdateCategory(ctx context.Context, input model.UpdateCategory) (*string, error) {
 	userId := ctx.Value("userId").(string)
 
-	uId, err := strconv.Atoi(userId)
-
-	id, err := strconv.Atoi(input.ID)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, input.EventID)
+	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if !hasAccess {
 		panic("Access denied")
 	}
 
-	category, err := services.GetCategory(id)
+	category, err := services.GetCategory(input.ID)
 
 	if category == nil {
 		return nil, err
@@ -82,28 +67,20 @@ func (r *mutationResolver) UpdateCategory(ctx context.Context, input model.Updat
 func (r *mutationResolver) DeleteCategory(ctx context.Context, input model.DeleteCategory) (*string, error) {
 	userId := ctx.Value("userId").(string)
 
-	uId, err := strconv.Atoi(userId)
-
-	id, err := strconv.Atoi(input.ID)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, input.EventID)
+	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if !hasAccess {
 		panic("Access denied")
 	}
-	category, err := services.GetCategory(id)
+	category, err := services.GetCategory(input.ID)
 
 	if category == nil {
 		return nil, err
 	}
 
-	err = services.DeleteCategory(id)
+	err = services.DeleteCategory(input.ID)
 
 	if err != nil {
 		fmt.Println("Something went wrong when deleting category", err.Error())

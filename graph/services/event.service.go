@@ -8,14 +8,13 @@ import (
 	"github.com/Swejal08/go-ggqlen/initializer"
 	"github.com/Swejal08/go-ggqlen/utils"
 	"github.com/doug-martin/goqu/v9"
+	"github.com/google/uuid"
 )
 
 var eventFieldMapper = map[string]string{
 	"Name":        "name",
 	"Description": "description",
 	"Location":    "location",
-	"StartDate":   "start_date",
-	"EndDate":     "end_date",
 }
 
 func CreateEvent(body model.NewEvent) (*model.Event, error) {
@@ -23,9 +22,11 @@ func CreateEvent(body model.NewEvent) (*model.Event, error) {
 
 	queryBuilder := initializer.GetQueryBuilder()
 
+	newId := uuid.New()
+
 	ds := queryBuilder.Insert("event").
-		Cols("name", "description", "location", "start_date", "end_date").
-		Vals(goqu.Vals{body.Name, body.Description, body.Location, body.StartDate, body.EndDate})
+		Cols("id", "name", "description", "location").
+		Vals(goqu.Vals{newId, body.Name, body.Description, body.Location})
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
@@ -38,24 +39,22 @@ func CreateEvent(body model.NewEvent) (*model.Event, error) {
 	}
 
 	newEvent := &model.Event{
-		ID:          "1",
+		ID:          newId.String(),
 		Name:        body.Name,
 		Description: body.Description,
 		Location:    body.Location,
-		StartDate:   body.StartDate,
-		EndDate:     body.EndDate,
 	}
 
 	return newEvent, nil
 
 }
 
-func GetEvent(eventId int) (*model.Event, error) {
+func GetEvent(eventId string) (*model.Event, error) {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	sqlQuery, _, err := queryBuilder.Select("id", "name", "description", "location", "start_date", "end_date").From("event").Where(goqu.Ex{"id": eventId}).ToSQL()
+	sqlQuery, _, err := queryBuilder.Select("id", "name", "description", "location").From("event").Where(goqu.Ex{"id": eventId}).ToSQL()
 
 	if err != nil {
 		fmt.Println("An error occurred while generating the SQL", err.Error())
@@ -65,7 +64,7 @@ func GetEvent(eventId int) (*model.Event, error) {
 
 	event := &model.Event{}
 
-	if err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.StartDate, &event.EndDate); err == nil {
+	if err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location); err == nil {
 		return event, nil
 	} else if err == sql.ErrNoRows {
 		fmt.Println("No events found", err.Error())
@@ -100,7 +99,7 @@ func UpdateEvent(body model.UpdateEvent) error {
 
 }
 
-func DeleteEvent(eventId int) error {
+func DeleteEvent(eventId string) error {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()

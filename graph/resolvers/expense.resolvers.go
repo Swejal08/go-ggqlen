@@ -7,7 +7,6 @@ package graph
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	accessControl "github.com/Swejal08/go-ggqlen/access-control"
 	"github.com/Swejal08/go-ggqlen/enums"
@@ -19,15 +18,9 @@ import (
 func (r *mutationResolver) CreateExpense(ctx context.Context, input model.NewExpense) (*model.Expense, error) {
 	userId := ctx.Value("userId").(string)
 
-	uId, err := strconv.Atoi(userId)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, input.EventID)
+	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if !hasAccess {
 		panic("Access denied")
@@ -46,23 +39,15 @@ func (r *mutationResolver) CreateExpense(ctx context.Context, input model.NewExp
 func (r *mutationResolver) UpdateExpense(ctx context.Context, input model.UpdateExpense) (*string, error) {
 	userId := ctx.Value("userId").(string)
 
-	uId, err := strconv.Atoi(userId)
-
-	id, err := strconv.Atoi(input.ID)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, input.EventID)
+	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if !hasAccess {
 		panic("Access denied")
 	}
 
-	expense, err := services.GetExpense(id)
+	expense, err := services.GetExpense(input.ID)
 
 	if expense == nil {
 		return nil, err
@@ -82,29 +67,21 @@ func (r *mutationResolver) UpdateExpense(ctx context.Context, input model.Update
 func (r *mutationResolver) DeleteExpense(ctx context.Context, input model.DeleteExpense) (*string, error) {
 	userId := ctx.Value("userId").(string)
 
-	uId, err := strconv.Atoi(userId)
-
-	id, err := strconv.Atoi(input.ID)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, input.EventID)
+	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if !hasAccess {
 		panic("Access denied")
 	}
 
-	expense, err := services.GetExpense(id)
+	expense, err := services.GetExpense(input.ID)
 
 	if expense == nil {
 		return nil, err
 	}
 
-	err = services.DeleteExpense(id)
+	err = services.DeleteExpense(input.ID)
 
 	if err != nil {
 		fmt.Println("Something went wrong when deleting expense", err.Error())
@@ -115,18 +92,12 @@ func (r *mutationResolver) DeleteExpense(ctx context.Context, input model.Delete
 }
 
 // TotalExpense is the resolver for the totalExpense field.
-func (r *queryResolver) TotalExpense(ctx context.Context, eventID int) (*model.TotalExpense, error) {
+func (r *queryResolver) TotalExpense(ctx context.Context, eventID string) (*model.TotalExpense, error) {
 	userId := ctx.Value("userId").(string)
-
-	uId, err := strconv.Atoi(userId)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, eventID)
+	hasAccess := accessControl.Check(allowedRoles, userId, eventID)
 
 	if !hasAccess {
 		panic("Access denied")

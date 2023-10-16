@@ -6,18 +6,18 @@ type Category {
 }
 
 input NewCategory {
-  eventId: Int! @goTag(key: "validate", value: "required")
+  eventId: ID! @goTag(key: "validate", value: "required")
   categoryName: String! @goTag(key: "validate", value: "required")
 }
 
 input UpdateCategory {
   id: ID! @goTag(key: "validate", value: "required")
-  eventId: Int! @goTag(key: "validate", value: "required")
+  eventId: ID! @goTag(key: "validate", value: "required")
   categoryName: String @goTag(key: "validate", value: "required")
 }
 
 input DeleteCategory {
-  eventId: Int! @goTag(key: "validate", value: "required")
+  eventId: ID! @goTag(key: "validate", value: "required")
   id: ID! @goTag(key: "validate", value: "required")
 }
 

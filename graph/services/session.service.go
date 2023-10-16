@@ -11,20 +11,22 @@ import (
 	"github.com/google/uuid"
 )
 
-var categoryFieldMapper = map[string]string{
-	"CategoryName": "category_name",
+var sessionFieldMapper = map[string]string{
+	"EventID":   "event_id",
+	"StartDate": "start_date",
+	"EndDate":   "end_date",
 }
 
-func CreateCategory(body model.NewCategory) (*model.Category, error) {
+func CreateSession(body model.NewSession) (*model.Session, error) {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
 	newId := uuid.New()
 
-	ds := queryBuilder.Insert("category").
-		Cols("id", "category_name").
-		Vals(goqu.Vals{newId, body.CategoryName})
+	ds := queryBuilder.Insert("sessions").
+		Cols("id", "event_id", "start_date", "end_date").
+		Vals(goqu.Vals{newId, body.EventID, body.StartDate, body.EndDate})
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
@@ -36,21 +38,22 @@ func CreateCategory(body model.NewCategory) (*model.Category, error) {
 		return nil, err
 	}
 
-	newCategory := &model.Category{
-		ID:           newId.String(),
-		CategoryName: body.CategoryName,
+	newSession := &model.Session{
+		ID:        newId.String(),
+		EventID:   body.EventID,
+		StartDate: body.StartDate,
+		EndDate:   body.EndDate,
 	}
 
-	return newCategory, nil
-
+	return newSession, nil
 }
 
-func GetCategory(categoryId string) (*model.Category, error) {
+func GetSession(sessionId string) (*model.Session, error) {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	sqlQuery, _, err := queryBuilder.Select("id", "category_name").From("category").Where(goqu.Ex{"id": categoryId}).ToSQL()
+	sqlQuery, _, err := queryBuilder.Select("id", "event_id", "start_date", "end_date").From("sessions").Where(goqu.Ex{"id": sessionId}).ToSQL()
 
 	if err != nil {
 		fmt.Println("An error occurred while generating the SQL", err.Error())
@@ -58,12 +61,12 @@ func GetCategory(categoryId string) (*model.Category, error) {
 
 	row := database.QueryRow(sqlQuery)
 
-	category := &model.Category{}
+	session := &model.Session{}
 
-	if err := row.Scan(&category.ID, &category.CategoryName); err == nil {
-		return category, nil
+	if err := row.Scan(&session.ID, &session.EventID, &session.StartDate, &session.EndDate); err == nil {
+		return session, nil
 	} else if err == sql.ErrNoRows {
-		fmt.Println("No category found", err.Error())
+		fmt.Println("No session found", err.Error())
 		return nil, err
 	} else {
 		fmt.Println("An error occurred while scanning row", err.Error())
@@ -72,14 +75,14 @@ func GetCategory(categoryId string) (*model.Category, error) {
 
 }
 
-func UpdateCategory(body model.UpdateCategory) error {
+func UpdateSession(body model.UpdateSession) error {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	record := utils.ConvertInputFieldsToRecord(body, categoryFieldMapper)
+	record := utils.ConvertInputFieldsToRecord(body, sessionFieldMapper)
 
-	ds := queryBuilder.Update("category").Set(record).Where(goqu.Ex{"id": body.ID})
+	ds := queryBuilder.Update("sessions").Set(record).Where(goqu.Ex{"id": body.ID})
 
 	sql, _, err := ds.ToSQL()
 
@@ -95,12 +98,12 @@ func UpdateCategory(body model.UpdateCategory) error {
 
 }
 
-func DeleteCategory(categoryId string) error {
+func DeleteSession(sessionId string) error {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	ds := queryBuilder.Delete("category").Where(goqu.Ex{"id": categoryId})
+	ds := queryBuilder.Delete("sessions").Where(goqu.Ex{"id": sessionId})
 
 	sql, _, err := ds.ToSQL()
 

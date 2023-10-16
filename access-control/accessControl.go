@@ -1,11 +1,14 @@
 package accessControl
 
 import (
+	"fmt"
+
 	"github.com/Swejal08/go-ggqlen/enums"
 	"github.com/Swejal08/go-ggqlen/graph/services"
 )
 
-func Check(allowedRoles []enums.EventMembershipRole, userId int, eventId int) bool {
+func Check(allowedRoles []enums.EventMembershipRole, userId string, eventId string) bool {
+	fmt.Println(userId, eventId)
 
 	memberShip := services.GetEventMembership(eventId, userId)
 

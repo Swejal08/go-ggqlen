@@ -7,20 +7,19 @@ import (
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/initializer"
 	"github.com/doug-martin/goqu/v9"
+	"github.com/google/uuid"
 )
 
-func CreateEventMembership(eventId int, userId int, role model.Role) error {
+func CreateEventMembership(eventId string, userId string, role model.Role) error {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	// there could be more appropriate way to use enums rather than this
-
-	// membershipRole := enums.GetRoleDescription(int(role))
+	newId := uuid.New()
 
 	ds := queryBuilder.Insert("event_membership").
-		Cols("event_id", "user_id", "role").
-		Vals(goqu.Vals{eventId, userId, role})
+		Cols("id", "event_id", "user_id", "role").
+		Vals(goqu.Vals{newId, eventId, userId, role})
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
@@ -38,7 +37,7 @@ func CreateEventMembership(eventId int, userId int, role model.Role) error {
 
 }
 
-func GetEventMembership(eventId int, userId int) *model.EventMembership {
+func GetEventMembership(eventId string, userId string) *model.EventMembership {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()

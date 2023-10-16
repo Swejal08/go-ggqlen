@@ -10,20 +10,20 @@ enum Role {
 
 type EventMembership {
   id: ID!
-  eventId: Int!
-  userId: Int!
+  eventId: ID!
+  userId: ID!
   role: Role!
 }
 
 input AssignEventMembership {
-  eventId: Int! @goTag(key: "validate", value: "required")
-  userId: Int! @goTag(key: "validate", value: "required")
+  eventId: ID! @goTag(key: "validate", value: "required")
+  userId: ID! @goTag(key: "validate", value: "required")
   role: Role! @goTag(key: "validate", value: "required")
 }
 
 input RemoveEventMembership {
-  eventId: Int! @goTag(key: "validate", value: "required")
-  userId: Int! @goTag(key: "validate", value: "required")
+  eventId: ID! @goTag(key: "validate", value: "required")
+  userId: ID! @goTag(key: "validate", value: "required")
 }
 
 extend type Mutation {

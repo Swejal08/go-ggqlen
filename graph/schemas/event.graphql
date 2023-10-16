@@ -5,16 +5,12 @@ type Event {
   name: String!
   description: String!
   location: String!
-  startDate: String!
-  endDate: String!
 }
 
 input NewEvent {
   name: String! @goTag(key: "validate", value: "required")
   description: String! @goTag(key: "validate", value: "required")
   location: String! @goTag(key: "validate", value: "required")
-  startDate: String! @goTag(key: "validate", value: "required")
-  endDate: String! @goTag(key: "validate", value: "required")
 }
 
 input UpdateEvent {
@@ -22,8 +18,6 @@ input UpdateEvent {
   name: String
   description: String
   location: String
-  startDate: String @goTag(key: "validate", value: "date")
-  endDate: String @goTag(key: "validate", value: "date")
 }
 
 input DeleteEvent {
@@ -32,7 +26,7 @@ input DeleteEvent {
 
 type Query {
   events: [Event!]! @CheckUserIdExists
-  event(eventId: Int!): Event @CheckUserIdExists
+  event(eventId: ID!): Event @CheckUserIdExists
 }
 
 type Mutation {

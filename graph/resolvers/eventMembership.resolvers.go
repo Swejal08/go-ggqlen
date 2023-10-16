@@ -7,7 +7,6 @@ package graph
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	accessControl "github.com/Swejal08/go-ggqlen/access-control"
 	"github.com/Swejal08/go-ggqlen/enums"
@@ -21,21 +20,15 @@ func (r *mutationResolver) AssignEventMembership(ctx context.Context, input mode
 
 	var err error
 
-	uId, err := strconv.Atoi(userId)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, input.EventID)
+	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if !hasAccess {
 		panic("Access denied")
 	}
 
-	membership := services.GetEventMembership(input.EventID, uId)
+	membership := services.GetEventMembership(input.EventID, userId)
 
 	if string(membership.Role) == enums.GetRoleDescription(int(enums.Contributor)) && input.Role != model.Role(enums.GetRoleDescription(int(enums.Attendee))) {
 		panic("Contributor can only invite Attendees")
@@ -62,21 +55,15 @@ func (r *mutationResolver) AssignEventMembership(ctx context.Context, input mode
 func (r *mutationResolver) RemoveEventMembership(ctx context.Context, input model.RemoveEventMembership) (*string, error) {
 	userId := ctx.Value("userId").(string)
 
-	uId, err := strconv.Atoi(userId)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, input.EventID)
+	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if !hasAccess {
 		panic("Access denied")
 	}
 
-	err = services.RemoveEventMembership(input)
+	err := services.RemoveEventMembership(input)
 
 	if err != nil {
 		fmt.Println("Something went wrong when removing event membership", err.Error())

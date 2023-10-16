@@ -1,13 +1,17 @@
-ALTER TABLE "Expense" DROP CONSTRAINT "Expense_category_id_fkey";
-ALTER TABLE "Expense" DROP CONSTRAINT "Expense_event_id_fkey";
+ALTER TABLE "expense" DROP CONSTRAINT "fk_event_id_expense";
+ALTER TABLE "expense" DROP CONSTRAINT "fk_category_id_expense";
 
-ALTER TABLE "event_membership" DROP CONSTRAINT "fk_user_id";
-ALTER TABLE "event_membership" DROP CONSTRAINT "fk_event_id";
+ALTER TABLE "event_membership" DROP CONSTRAINT "fk_user_id_event_membership";
+ALTER TABLE "event_membership" DROP CONSTRAINT "fk_event_id_event_membership";
+
+ALTER TABLE "sessions" DROP CONSTRAINT "fk_event_id_sessions";
+
 
 -- Drop tables in reverse order
 
-DROP TABLE "Category";
-DROP TABLE "Expense";
+DROP TABLE "category";
+DROP TABLE "expense";
+DROP TABLE "sessions";
 DROP TABLE "event_membership";
 DROP TABLE "event";
 DROP TABLE "user";

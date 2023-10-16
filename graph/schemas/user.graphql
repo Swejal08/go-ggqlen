@@ -13,10 +13,6 @@ input NewUser {
   phone: String
 }
 
-extend type Query {
-  users: [User]! @CheckUserIdExists
-}
-
 extend type Mutation {
   createUser(input: NewUser!): User!
 }

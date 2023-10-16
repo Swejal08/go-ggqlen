@@ -9,6 +9,7 @@ import (
 	"github.com/Swejal08/go-ggqlen/initializer"
 	"github.com/Swejal08/go-ggqlen/utils"
 	"github.com/doug-martin/goqu/v9"
+	"github.com/google/uuid"
 )
 
 var expenseFieldMapper = map[string]string{
@@ -24,9 +25,11 @@ func CreateExpense(body model.NewExpense) (*model.Expense, error) {
 
 	queryBuilder := initializer.GetQueryBuilder()
 
+	newId := uuid.New()
+
 	ds := queryBuilder.Insert("expense").
-		Cols("event_id", "item_name", "cost", "description", "category_id").
-		Vals(goqu.Vals{body.EventID, body.ItemName, body.Cost, body.Description, body.CategoryID})
+		Cols("id", "event_id", "item_name", "cost", "description", "category_id").
+		Vals(goqu.Vals{newId, body.EventID, body.ItemName, body.Cost, body.Description, body.CategoryID})
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
@@ -38,10 +41,8 @@ func CreateExpense(body model.NewExpense) (*model.Expense, error) {
 		return nil, err
 	}
 
-	// TODO: Need to fetch category from another table instead of sending categoryId
-
 	newEvent := &model.Expense{
-		ID:          "1",
+		ID:          newId.String(),
 		EventID:     body.EventID,
 		ItemName:    body.ItemName,
 		Cost:        body.Cost,
@@ -52,7 +53,7 @@ func CreateExpense(body model.NewExpense) (*model.Expense, error) {
 
 }
 
-func GetExpense(expenseId int) (*model.Expense, error) {
+func GetExpense(expenseId string) (*model.Expense, error) {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
@@ -102,7 +103,7 @@ func UpdateExpense(body model.UpdateExpense) error {
 
 }
 
-func DeleteExpense(expenseId int) error {
+func DeleteExpense(expenseId string) error {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()

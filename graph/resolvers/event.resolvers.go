@@ -26,21 +26,14 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 
 	userId := ctx.Value("userId").(string)
 
-	uId, err := strconv.Atoi(userId)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	event, err := services.CreateEvent(input)
 
 	if err != nil {
 		fmt.Println("Event cannot be created", err.Error())
+
 	}
 
-	// replace 1 and 1 with  eventId that will come from event and userId from ctx.
-
-	err = services.CreateEventMembership(1, uId, "admin")
+	err = services.CreateEventMembership(event.ID, userId, "admin")
 
 	if err != nil {
 		fmt.Println("Event Membership cannot be created", err.Error())
@@ -53,31 +46,15 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 func (r *mutationResolver) UpdateEvent(ctx context.Context, input model.UpdateEvent) (*string, error) {
 	userId := ctx.Value("userId").(string)
 
-	uId, err := strconv.Atoi(userId)
-
-	eventId, err := strconv.Atoi(input.ID)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, eventId)
+	hasAccess := accessControl.Check(allowedRoles, userId, input.ID)
 
 	if !hasAccess {
 		panic("Access denied")
 	}
 
-	//need to convert db id type to string
-
-	id, err := strconv.Atoi(input.ID)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
-	event, err := services.GetEvent(id)
+	event, err := services.GetEvent(input.ID)
 
 	if event == nil {
 		return nil, err
@@ -97,23 +74,15 @@ func (r *mutationResolver) UpdateEvent(ctx context.Context, input model.UpdateEv
 func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEvent) (*string, error) {
 	userId := ctx.Value("userId").(string)
 
-	uId, err := strconv.Atoi(userId)
-
-	eventId, err := strconv.Atoi(input.ID)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, eventId)
+	hasAccess := accessControl.Check(allowedRoles, userId, input.ID)
 
 	if !hasAccess {
 		panic("Access denied")
 	}
 
-	event, err := services.GetEvent(eventId)
+	event, err := services.GetEvent(input.ID)
 
 	if event == nil {
 		return nil, err
@@ -124,7 +93,7 @@ func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEv
 		goqu does not have softDelete out of the box
 	*/
 
-	err = services.DeleteEvent(eventId)
+	err = services.DeleteEvent(input.ID)
 
 	if err != nil {
 		fmt.Println("Something went wrong when deleting event", err.Error())
@@ -150,7 +119,7 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 
 	ds := queryBuilder.Select(
 		goqu.I("event.id").As("event_id"), "name", "description",
-		"location", "start_date", "end_date").
+		"location").
 		From("event_membership").InnerJoin(goqu.T("event"), goqu.On(goqu.Ex{"event_id": goqu.I("event.id")})).Where(goqu.Ex{"event_membership.user_id": uId})
 
 	sql, _, err := ds.ToSQL()
@@ -171,7 +140,7 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 
 	for rows.Next() {
 		event := &model.Event{}
-		if err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.StartDate, &event.EndDate); err != nil {
+		if err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.Location); err != nil {
 			fmt.Println("An error occurred while scanning rows", err.Error())
 			return nil, err
 		}
@@ -189,14 +158,12 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 }
 
 // Event is the resolver for the event field.
-func (r *queryResolver) Event(ctx context.Context, eventID int) (*model.Event, error) {
+func (r *queryResolver) Event(ctx context.Context, eventID string) (*model.Event, error) {
 	userId := ctx.Value("userId").(string)
-
-	uId, err := strconv.Atoi(userId)
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, uId, eventID)
+	hasAccess := accessControl.Check(allowedRoles, userId, eventID)
 
 	if !hasAccess {
 		panic("You do not have event membership")
