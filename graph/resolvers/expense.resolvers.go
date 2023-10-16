@@ -12,18 +12,23 @@ import (
 	"github.com/Swejal08/go-ggqlen/enums"
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
+	"github.com/Swejal08/go-ggqlen/utils"
 )
 
 // CreateExpense is the resolver for the createExpense field.
 func (r *mutationResolver) CreateExpense(ctx context.Context, input model.NewExpense) (*model.Expense, error) {
+	if err := utils.ValidateInput(input); err != nil {
+		return nil, err
+	}
+
 	userId := ctx.Value("userId").(string)
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
 	event, err := services.CreateExpense(input)
@@ -37,14 +42,18 @@ func (r *mutationResolver) CreateExpense(ctx context.Context, input model.NewExp
 
 // UpdateExpense is the resolver for the updateExpense field.
 func (r *mutationResolver) UpdateExpense(ctx context.Context, input model.UpdateExpense) (*string, error) {
+	if err := utils.ValidateInput(input); err != nil {
+		return nil, err
+	}
+
 	userId := ctx.Value("userId").(string)
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
 	expense, err := services.GetExpense(input.ID)
@@ -56,7 +65,7 @@ func (r *mutationResolver) UpdateExpense(ctx context.Context, input model.Update
 	err = services.UpdateExpense(input)
 
 	if err != nil {
-		fmt.Println("Something went wrong when updating expense", err.Error())
+		return nil, err
 	}
 
 	successMessage := "Expense has been updated"
@@ -69,10 +78,10 @@ func (r *mutationResolver) DeleteExpense(ctx context.Context, input model.Delete
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
 	expense, err := services.GetExpense(input.ID)
@@ -84,7 +93,7 @@ func (r *mutationResolver) DeleteExpense(ctx context.Context, input model.Delete
 	err = services.DeleteExpense(input.ID)
 
 	if err != nil {
-		fmt.Println("Something went wrong when deleting expense", err.Error())
+		return nil, err
 	}
 
 	successMessage := "Expense has been deleted"
@@ -97,10 +106,10 @@ func (r *queryResolver) TotalExpense(ctx context.Context, eventID string) (*mode
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, eventID)
+	accessError := accessControl.Check(allowedRoles, userId, eventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
 	event, err := services.GetEvent(eventID)

@@ -23,21 +23,18 @@ func CreateEventMembership(eventId string, userId string, role model.Role) error
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return fmt.Errorf("An error occurred while generating the SQL : ", err.Error())
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return err
+		return fmt.Errorf("An error occurred while executing the SQL : ", err.Error())
 	}
-
-	fmt.Println("Event Membership has been created")
 
 	return nil
 
 }
 
-func GetEventMembership(eventId string, userId string) *model.EventMembership {
+func GetEventMembership(eventId string, userId string) (*model.EventMembership, error) {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
@@ -45,19 +42,19 @@ func GetEventMembership(eventId string, userId string) *model.EventMembership {
 	sqlQuery, _, err := queryBuilder.Select("id", "event_id", "user_id", "role").From("event_membership").Where(goqu.Ex{"event_id": eventId, "user_id": userId}).ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	row := database.QueryRow(sqlQuery)
 
 	membership := &model.EventMembership{}
 	if err := row.Scan(&membership.ID, &membership.EventID, &membership.UserID, &membership.Role); err == nil {
-		return membership
+		return membership, nil
 	} else if err == sql.ErrNoRows {
-		return nil
+		return nil, nil
+
 	} else {
-		fmt.Println("An error occurred while scanning row", err.Error())
-		return nil
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
 	}
 
 }
@@ -74,12 +71,12 @@ func UpdateEventMembership(input model.AssignEventMembership, eventMembership *m
 	sql, _, err := ds.ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return err
+		return fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 	return nil
@@ -95,12 +92,12 @@ func RemoveEventMembership(input model.RemoveEventMembership) error {
 	sql, _, err := ds.ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return err
+		return fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 	return nil

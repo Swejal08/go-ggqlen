@@ -7,13 +7,13 @@ import (
 	"github.com/Swejal08/go-ggqlen/graph/services"
 )
 
-func Check(allowedRoles []enums.EventMembershipRole, userId string, eventId string) bool {
+func Check(allowedRoles []enums.EventMembershipRole, userId string, eventId string) error {
 	fmt.Println(userId, eventId)
 
-	memberShip := services.GetEventMembership(eventId, userId)
+	memberShip, err := services.GetEventMembership(eventId, userId)
 
-	if memberShip == nil {
-		return false
+	if memberShip == nil || err != nil {
+		return fmt.Errorf("This resource is forbidden")
 	}
 
 	var convertedRoles []string
@@ -24,10 +24,11 @@ func Check(allowedRoles []enums.EventMembershipRole, userId string, eventId stri
 	hasAccess := hasAccess(convertedRoles, string(memberShip.Role))
 
 	if !hasAccess {
-		return false
+		return fmt.Errorf("This resource is forbidden")
+
 	}
 
-	return true
+	return nil
 
 }
 

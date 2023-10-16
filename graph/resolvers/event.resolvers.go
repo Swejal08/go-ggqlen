@@ -26,14 +26,13 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 	event, err := services.CreateEvent(input)
 
 	if err != nil {
-		fmt.Println("Event cannot be created", err.Error())
-
+		return nil, err
 	}
 
 	err = services.CreateEventMembership(event.ID, userId, "admin")
 
 	if err != nil {
-		fmt.Println("Event Membership cannot be created", err.Error())
+		return nil, err
 	}
 
 	return event, nil
@@ -41,26 +40,30 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 
 // UpdateEvent is the resolver for the updateEvent field.
 func (r *mutationResolver) UpdateEvent(ctx context.Context, input model.UpdateEvent) (*string, error) {
+	if err := utils.ValidateInput(input); err != nil {
+		return nil, err
+	}
+
 	userId := ctx.Value("userId").(string)
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.ID)
+	err := accessControl.Check(allowedRoles, userId, input.ID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if err != nil {
+		return nil, fmt.Errorf("This resource is forbidden")
 	}
 
-	event, err := services.GetEvent(input.ID)
+	_, err = services.GetEvent(input.ID)
 
-	if event == nil {
+	if err != nil {
 		return nil, err
 	}
 
 	err = services.UpdateEvent(input)
 
 	if err != nil {
-		fmt.Println("Something went wrong when updating event", err.Error())
+		return nil, err
 	}
 
 	successMessage := "Event has been updated"
@@ -73,15 +76,15 @@ func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEv
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.ID)
+	accessError := accessControl.Check(allowedRoles, userId, input.ID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
-	event, err := services.GetEvent(input.ID)
+	_, err := services.GetEvent(input.ID)
 
-	if event == nil {
+	if err != nil {
 		return nil, err
 	}
 
@@ -93,7 +96,7 @@ func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEv
 	err = services.DeleteEvent(input.ID)
 
 	if err != nil {
-		fmt.Println("Something went wrong when deleting event", err.Error())
+		return nil, err
 	}
 
 	successMessage := "Event has been deleted"
@@ -121,17 +124,15 @@ func (r *queryResolver) EventDetails(ctx context.Context, eventID string) (*mode
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor, enums.Attendee}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, eventID)
+	accessError := accessControl.Check(allowedRoles, userId, eventID)
 
-	if !hasAccess {
-		panic("You do not have event membership")
+	if accessError != nil {
+		return nil, accessError
 	}
 
 	event, err := services.GetEvent(eventID)
 
 	sessions, err := services.GetSessionByEventId(eventID)
-
-	fmt.Println(sessions)
 
 	if err != nil {
 		return nil, err

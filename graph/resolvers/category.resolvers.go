@@ -6,30 +6,34 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	accessControl "github.com/Swejal08/go-ggqlen/access-control"
 	"github.com/Swejal08/go-ggqlen/enums"
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
+	"github.com/Swejal08/go-ggqlen/utils"
 )
 
 // CreateCategory is the resolver for the createCategory field.
 func (r *mutationResolver) CreateCategory(ctx context.Context, input model.NewCategory) (*model.Category, error) {
+	if err := utils.ValidateInput(input); err != nil {
+		return nil, err
+	}
+
 	userId := ctx.Value("userId").(string)
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
 	category, err := services.CreateCategory(input)
 
 	if err != nil {
-		fmt.Println("Category cannot be created", err.Error())
+		return nil, err
 	}
 
 	return category, nil
@@ -37,14 +41,18 @@ func (r *mutationResolver) CreateCategory(ctx context.Context, input model.NewCa
 
 // UpdateCategory is the resolver for the updateCategory field.
 func (r *mutationResolver) UpdateCategory(ctx context.Context, input model.UpdateCategory) (*string, error) {
+	if err := utils.ValidateInput(input); err != nil {
+		return nil, err
+	}
+
 	userId := ctx.Value("userId").(string)
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
 	category, err := services.GetCategory(input.ID)
@@ -56,7 +64,7 @@ func (r *mutationResolver) UpdateCategory(ctx context.Context, input model.Updat
 	err = services.UpdateCategory(input)
 
 	if err != nil {
-		fmt.Println("Something went wrong when updating category", err.Error())
+		return nil, err
 	}
 
 	successMessage := "Category has been updated"
@@ -69,11 +77,12 @@ func (r *mutationResolver) DeleteCategory(ctx context.Context, input model.Delet
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
+
 	category, err := services.GetCategory(input.ID)
 
 	if category == nil {
@@ -83,7 +92,8 @@ func (r *mutationResolver) DeleteCategory(ctx context.Context, input model.Delet
 	err = services.DeleteCategory(input.ID)
 
 	if err != nil {
-		fmt.Println("Something went wrong when deleting category", err.Error())
+		return nil, err
+
 	}
 
 	successMessage := "Category has been deleted"

@@ -30,12 +30,11 @@ func CreateEvent(body model.NewEvent) (*model.Event, error) {
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return nil, fmt.Errorf("An error occurred while generating the SQL:", err.Error())
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("An error occurred while executing the SQL: ", err.Error())
 	}
 
 	newEvent := &model.Event{
@@ -57,7 +56,7 @@ func GetEvent(eventId string) (*model.Event, error) {
 	sqlQuery, _, err := queryBuilder.Select("id", "name", "description", "location").From("event").Where(goqu.Ex{"id": eventId}).ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return nil, fmt.Errorf("An error occurred while generating the SQL: ", err.Error())
 	}
 
 	row := database.QueryRow(sqlQuery)
@@ -67,11 +66,9 @@ func GetEvent(eventId string) (*model.Event, error) {
 	if err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location); err == nil {
 		return event, nil
 	} else if err == sql.ErrNoRows {
-		fmt.Println("No events found", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("No event found: ", err.Error())
 	} else {
-		fmt.Println("An error occurred while scanning row", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
 	}
 
 }
@@ -88,14 +85,14 @@ func GetMyEvents(userId string) ([]*model.Event, error) {
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	rows, err := database.Query(sql)
 
 	if err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 	defer rows.Close()
@@ -105,8 +102,8 @@ func GetMyEvents(userId string) ([]*model.Event, error) {
 	for rows.Next() {
 		event := &model.Event{}
 		if err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.Location); err != nil {
-			fmt.Println("An error occurred while scanning rows", err.Error())
-			return nil, err
+
+			return nil, fmt.Errorf("An error occurred while scanning rows", err.Error())
 		}
 
 		events = append(events, event)
@@ -114,8 +111,8 @@ func GetMyEvents(userId string) ([]*model.Event, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		fmt.Println("An error occurred after iterating through rows", err.Error())
-		return nil, err
+
+		return nil, fmt.Errorf("An error occurred after iterating through rows", err.Error())
 	}
 
 	return events, nil
@@ -154,12 +151,11 @@ func DeleteEvent(eventId string) error {
 	sql, _, err := ds.ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return fmt.Errorf("An error occurred while generating the SQL: ", err.Error())
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return err
+		return fmt.Errorf("An error occurred while executing the SQL: ", err.Error())
 	}
 
 	return nil

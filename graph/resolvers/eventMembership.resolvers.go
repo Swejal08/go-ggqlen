@@ -22,29 +22,29 @@ func (r *mutationResolver) AssignEventMembership(ctx context.Context, input mode
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
-	membership := services.GetEventMembership(input.EventID, userId)
+	membership, err := services.GetEventMembership(input.EventID, userId)
 
 	if string(membership.Role) == enums.GetRoleDescription(int(enums.Contributor)) && input.Role != model.Role(enums.GetRoleDescription(int(enums.Attendee))) {
-		panic("Contributor can only invite Attendees")
+		return nil, fmt.Errorf("Contributor can only invite Attendees")
 	}
 
-	eventMembership := services.GetEventMembership(input.EventID, input.UserID)
+	eventMembership, err := services.GetEventMembership(input.EventID, input.UserID)
+
+	if err != nil {
+		return nil, err
+	}
 
 	if eventMembership == nil {
 		err = services.CreateEventMembership(input.EventID, input.UserID, input.Role)
 
 	} else {
 		err = services.UpdateEventMembership(input, eventMembership)
-	}
-
-	if err != nil {
-		fmt.Println("Something went wrong when assigning event membership", err.Error())
 	}
 
 	successMessage := "Event Membership has been assigned"
@@ -57,16 +57,16 @@ func (r *mutationResolver) RemoveEventMembership(ctx context.Context, input mode
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
 	err := services.RemoveEventMembership(input)
 
 	if err != nil {
-		fmt.Println("Something went wrong when removing event membership", err.Error())
+		return nil, err
 	}
 
 	successMessage := "Event Membership has been removed"

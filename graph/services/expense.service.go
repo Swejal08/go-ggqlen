@@ -32,12 +32,12 @@ func CreateExpense(body model.NewExpense) (*model.Expense, error) {
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 	newEvent := &model.Expense{
@@ -60,7 +60,7 @@ func GetExpense(expenseId string) (*model.Expense, error) {
 	sqlQuery, _, err := queryBuilder.Select("id", "event_id", "item_name", "cost", "description", "category_id").From("expense").Where(goqu.Ex{"id": expenseId}).ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	row := database.QueryRow(sqlQuery)
@@ -70,11 +70,11 @@ func GetExpense(expenseId string) (*model.Expense, error) {
 	if err := row.Scan(&expense.ID, &expense.EventID, &expense.ItemName, &expense.Cost, &expense.Description, &expense.CategoryID); err == nil {
 		return expense, nil
 	} else if err == sql.ErrNoRows {
-		fmt.Println("No expense found", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("No expense found", err.Error())
+
 	} else {
-		fmt.Println("An error occurred while scanning row", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 }
@@ -91,11 +91,13 @@ func UpdateExpense(body model.UpdateExpense) error {
 	sql, _, err := ds.ToSQL()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("An error occurred while generating the SQL", err.Error())
+
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		return err
+		return fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 	return nil
@@ -112,12 +114,12 @@ func DeleteExpense(expenseId string) error {
 	sql, _, err := ds.ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return err
+		return fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 	return nil
@@ -142,15 +144,15 @@ func GetTotalExpensesBasedOnCategory(event *model.Event) (*model.TotalExpense, e
 	sqlQuery, _, err := ds.ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
+
 	}
 
 	rows, err := database.Query(sqlQuery)
 
 	if err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 	defer rows.Close()
@@ -160,7 +162,7 @@ func GetTotalExpensesBasedOnCategory(event *model.Event) (*model.TotalExpense, e
 	for rows.Next() {
 		category := &model.CategoryExpense{}
 		if err := rows.Scan(&category.ID, &category.Name, &category.Expense); err != nil {
-			fmt.Println("An error occurred while scanning rows", err.Error())
+			return nil, fmt.Errorf("An error occurred while scanning rows", err.Error())
 		}
 
 		categoryResponse = append(categoryResponse, category)
@@ -169,7 +171,7 @@ func GetTotalExpensesBasedOnCategory(event *model.Event) (*model.TotalExpense, e
 	}
 
 	if err := rows.Err(); err != nil {
-		fmt.Println("An error occurred after iterating through rows", err.Error())
+		return nil, fmt.Errorf("An error occurred after iterating through rows", err.Error())
 	}
 
 	expense := &model.TotalExpense{

@@ -25,10 +25,10 @@ func (r *mutationResolver) CreateSession(ctx context.Context, input model.NewSes
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
 	event, err := services.CreateSession(input)
@@ -50,10 +50,10 @@ func (r *mutationResolver) UpdateSession(ctx context.Context, input model.Update
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
 	session, err := services.GetSession(input.ID)
@@ -78,10 +78,10 @@ func (r *mutationResolver) DeleteSession(ctx context.Context, input model.Delete
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	hasAccess := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
-	if !hasAccess {
-		panic("Access denied")
+	if accessError != nil {
+		return nil, accessError
 	}
 
 	event, err := services.GetSession(input.ID)
@@ -93,7 +93,7 @@ func (r *mutationResolver) DeleteSession(ctx context.Context, input model.Delete
 	err = services.DeleteSession(input.ID)
 
 	if err != nil {
-		fmt.Println("Something went wrong when deleting session", err.Error())
+		return nil, err
 	}
 
 	successMessage := "Session has been deleted"

@@ -56,7 +56,7 @@ func GetSession(sessionId string) (*model.Session, error) {
 	sqlQuery, _, err := queryBuilder.Select("id", "event_id", "start_date", "end_date").From("sessions").Where(goqu.Ex{"id": sessionId}).ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	row := database.QueryRow(sqlQuery)
@@ -66,11 +66,11 @@ func GetSession(sessionId string) (*model.Session, error) {
 	if err := row.Scan(&session.ID, &session.EventID, &session.StartDate, &session.EndDate); err == nil {
 		return session, nil
 	} else if err == sql.ErrNoRows {
-		fmt.Println("No session found", err.Error())
-		return nil, err
+
+		return nil, fmt.Errorf("No session found", err.Error())
 	} else {
-		fmt.Println("An error occurred while scanning row", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 }
@@ -84,14 +84,14 @@ func GetSessionByEventId(eventId string) ([]*model.Session, error) {
 	sqlQuery, _, err := queryBuilder.Select("id", "event_id", "start_date", "end_date").From("sessions").Where(goqu.Ex{"event_id": eventId}).ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	rows, err := database.Query(sqlQuery)
 
 	if err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 	defer rows.Close()
@@ -101,8 +101,8 @@ func GetSessionByEventId(eventId string) ([]*model.Session, error) {
 	for rows.Next() {
 		session := &model.Session{}
 		if err := rows.Scan(&session.ID, &session.EventID, &session.StartDate, &session.EndDate); err != nil {
-			fmt.Println("An error occurred while scanning rows", err.Error())
-			return nil, err
+			return nil, fmt.Errorf("An error occurred while scanning rows", err.Error())
+
 		}
 
 		sessions = append(sessions, session)
@@ -110,8 +110,8 @@ func GetSessionByEventId(eventId string) ([]*model.Session, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		fmt.Println("An error occurred after iterating through rows", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("An error occurred after iterating through rows", err.Error())
+
 	}
 
 	return sessions, nil
@@ -129,11 +129,13 @@ func UpdateSession(body model.UpdateSession) error {
 	sql, _, err := ds.ToSQL()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("An error occurred while generating the SQL", err.Error())
+
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		return err
+		return fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 	return nil
@@ -150,12 +152,12 @@ func DeleteSession(sessionId string) error {
 	sql, _, err := ds.ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return err
+		return fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
 	}
 
 	return nil

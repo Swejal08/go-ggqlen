@@ -28,12 +28,12 @@ func CreateCategory(body model.NewCategory) (*model.Category, error) {
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return nil, err
+
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
 	}
 
 	newCategory := &model.Category{
@@ -53,7 +53,7 @@ func GetCategory(categoryId string) (*model.Category, error) {
 	sqlQuery, _, err := queryBuilder.Select("id", "category_name").From("category").Where(goqu.Ex{"id": categoryId}).ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	row := database.QueryRow(sqlQuery)
@@ -63,11 +63,11 @@ func GetCategory(categoryId string) (*model.Category, error) {
 	if err := row.Scan(&category.ID, &category.CategoryName); err == nil {
 		return category, nil
 	} else if err == sql.ErrNoRows {
-		fmt.Println("No category found", err.Error())
-		return nil, err
+
+		return nil, fmt.Errorf("No category found", err.Error())
 	} else {
-		fmt.Println("An error occurred while scanning row", err.Error())
-		return nil, err
+
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
 	}
 
 }
@@ -84,11 +84,12 @@ func UpdateCategory(body model.UpdateCategory) error {
 	sql, _, err := ds.ToSQL()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("An error occurred while generating the SQL", err.Error())
+
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		return err
+		return fmt.Errorf("An error occurred while executing the SQL", err.Error())
 	}
 
 	return nil
@@ -105,12 +106,11 @@ func DeleteCategory(categoryId string) error {
 	sql, _, err := ds.ToSQL()
 
 	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return fmt.Errorf("An error occurred while generating the SQL", err.Error())
 	}
 
 	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return err
+		return fmt.Errorf("An error occurred while executing the SQL", err.Error())
 	}
 
 	return nil
