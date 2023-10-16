@@ -1,5 +1,6 @@
 #import "event.graphql"
 #import "user.graphql"
+#import "directive.graphql"
 
 enum Role {
   contributor
@@ -27,5 +28,7 @@ input RemoveEventMembership {
 
 extend type Mutation {
   assignEventMembership(input: AssignEventMembership!): String
+    @CheckUserIdExists
   removeEventMembership(input: RemoveEventMembership!): String
+    @CheckUserIdExists
 }

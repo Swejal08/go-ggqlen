@@ -1,0 +1,1 @@
+directive @CheckUserIdExists on FIELD_DEFINITION

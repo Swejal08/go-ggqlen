@@ -1,3 +1,5 @@
+#import "directive.graphql"
+
 type User {
   id: ID!
   name: String!
@@ -12,7 +14,7 @@ input NewUser {
 }
 
 extend type Query {
-  users: [User]!
+  users: [User]! @CheckUserIdExists
 }
 
 extend type Mutation {

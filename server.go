@@ -9,6 +9,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
 
+	"github.com/Swejal08/go-ggqlen/directives"
 	graph "github.com/Swejal08/go-ggqlen/graph/resolvers"
 	resolvers "github.com/Swejal08/go-ggqlen/graph/resolvers"
 	"github.com/Swejal08/go-ggqlen/initializer"
@@ -33,7 +34,7 @@ func main() {
 
 	router.Use(middleware.UserMiddleware())
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &resolvers.Resolver{}}))
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &resolvers.Resolver{}, Directives: resolvers.DirectiveRoot{CheckUserIdExists: directives.CheckUserId()}}))
 
 	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)

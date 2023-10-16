@@ -43,6 +43,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	CheckUserIdExists func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -653,7 +654,9 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../schemas/category.graphql", Input: `type Category {
+	{Name: "../schemas/category.graphql", Input: `#import "directive.graphql"
+
+type Category {
   id: ID!
   categoryName: String!
 }
@@ -675,12 +678,16 @@ input DeleteCategory {
 }
 
 extend type Mutation {
-  createCategory(input: NewCategory!): Category!
-  updateCategory(input: UpdateCategory!): String
-  deleteCategory(input: DeleteCategory!): String
+  createCategory(input: NewCategory!): Category! @CheckUserIdExists
+  updateCategory(input: UpdateCategory!): String @CheckUserIdExists
+  deleteCategory(input: DeleteCategory!): String @CheckUserIdExists
 }
 `, BuiltIn: false},
-	{Name: "../schemas/event.graphql", Input: `type Event {
+	{Name: "../schemas/directive.graphql", Input: `directive @CheckUserIdExists on FIELD_DEFINITION
+`, BuiltIn: false},
+	{Name: "../schemas/event.graphql", Input: `#import "directive.graphql"
+
+type Event {
   id: ID!
   name: String!
   description: String!
@@ -711,18 +718,19 @@ input DeleteEvent {
 }
 
 type Query {
-  events: [Event!]!
-  event(eventId: Int!): Event
+  events: [Event!]! @CheckUserIdExists
+  event(eventId: Int!): Event @CheckUserIdExists
 }
 
 type Mutation {
-  createEvent(input: NewEvent!): Event!
-  updateEvent(input: UpdateEvent!): String
-  deleteEvent(input: DeleteEvent!): String
+  createEvent(input: NewEvent!): Event! @CheckUserIdExists
+  updateEvent(input: UpdateEvent!): String @CheckUserIdExists
+  deleteEvent(input: DeleteEvent!): String @CheckUserIdExists
 }
 `, BuiltIn: false},
 	{Name: "../schemas/eventMembership.graphql", Input: `#import "event.graphql"
 #import "user.graphql"
+#import "directive.graphql"
 
 enum Role {
   contributor
@@ -750,10 +758,13 @@ input RemoveEventMembership {
 
 extend type Mutation {
   assignEventMembership(input: AssignEventMembership!): String
+    @CheckUserIdExists
   removeEventMembership(input: RemoveEventMembership!): String
+    @CheckUserIdExists
 }
 `, BuiltIn: false},
 	{Name: "../schemas/expense.graphql", Input: `#import "event.graphql"
+#import "directive.graphql"
 
 type Expense {
   id: ID!
@@ -799,16 +810,18 @@ input DeleteExpense {
 }
 
 extend type Query {
-  totalExpense(eventId: Int!): TotalExpense
+  totalExpense(eventId: Int!): TotalExpense @CheckUserIdExists
 }
 
 extend type Mutation {
-  createExpense(input: NewExpense!): Expense!
-  updateExpense(input: UpdateExpense!): String
-  deleteExpense(input: DeleteExpense!): String
+  createExpense(input: NewExpense!): Expense! @CheckUserIdExists
+  updateExpense(input: UpdateExpense!): String @CheckUserIdExists
+  deleteExpense(input: DeleteExpense!): String @CheckUserIdExists
 }
 `, BuiltIn: false},
-	{Name: "../schemas/user.graphql", Input: `type User {
+	{Name: "../schemas/user.graphql", Input: `#import "directive.graphql"
+
+type User {
   id: ID!
   name: String!
   email: String!
@@ -822,7 +835,7 @@ input NewUser {
 }
 
 extend type Query {
-  users: [User]!
+  users: [User]! @CheckUserIdExists
 }
 
 extend type Mutation {
@@ -2036,8 +2049,28 @@ func (ec *executionContext) _Mutation_createEvent(ctx context.Context, field gra
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateEvent(rctx, fc.Args["input"].(model.NewEvent))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateEvent(rctx, fc.Args["input"].(model.NewEvent))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.Event); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.Event`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2105,8 +2138,28 @@ func (ec *executionContext) _Mutation_updateEvent(ctx context.Context, field gra
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateEvent(rctx, fc.Args["input"].(model.UpdateEvent))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateEvent(rctx, fc.Args["input"].(model.UpdateEvent))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2157,8 +2210,28 @@ func (ec *executionContext) _Mutation_deleteEvent(ctx context.Context, field gra
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteEvent(rctx, fc.Args["input"].(model.DeleteEvent))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteEvent(rctx, fc.Args["input"].(model.DeleteEvent))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2209,8 +2282,28 @@ func (ec *executionContext) _Mutation_createCategory(ctx context.Context, field 
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateCategory(rctx, fc.Args["input"].(model.NewCategory))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateCategory(rctx, fc.Args["input"].(model.NewCategory))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.Category); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.Category`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2270,8 +2363,28 @@ func (ec *executionContext) _Mutation_updateCategory(ctx context.Context, field 
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateCategory(rctx, fc.Args["input"].(model.UpdateCategory))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateCategory(rctx, fc.Args["input"].(model.UpdateCategory))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2322,8 +2435,28 @@ func (ec *executionContext) _Mutation_deleteCategory(ctx context.Context, field 
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteCategory(rctx, fc.Args["input"].(model.DeleteCategory))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteCategory(rctx, fc.Args["input"].(model.DeleteCategory))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2374,8 +2507,28 @@ func (ec *executionContext) _Mutation_assignEventMembership(ctx context.Context,
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AssignEventMembership(rctx, fc.Args["input"].(model.AssignEventMembership))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().AssignEventMembership(rctx, fc.Args["input"].(model.AssignEventMembership))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2426,8 +2579,28 @@ func (ec *executionContext) _Mutation_removeEventMembership(ctx context.Context,
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RemoveEventMembership(rctx, fc.Args["input"].(model.RemoveEventMembership))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().RemoveEventMembership(rctx, fc.Args["input"].(model.RemoveEventMembership))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2478,8 +2651,28 @@ func (ec *executionContext) _Mutation_createExpense(ctx context.Context, field g
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateExpense(rctx, fc.Args["input"].(model.NewExpense))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateExpense(rctx, fc.Args["input"].(model.NewExpense))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.Expense); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.Expense`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2547,8 +2740,28 @@ func (ec *executionContext) _Mutation_updateExpense(ctx context.Context, field g
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateExpense(rctx, fc.Args["input"].(model.UpdateExpense))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateExpense(rctx, fc.Args["input"].(model.UpdateExpense))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2599,8 +2812,28 @@ func (ec *executionContext) _Mutation_deleteExpense(ctx context.Context, field g
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteExpense(rctx, fc.Args["input"].(model.DeleteExpense))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteExpense(rctx, fc.Args["input"].(model.DeleteExpense))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2716,8 +2949,28 @@ func (ec *executionContext) _Query_events(ctx context.Context, field graphql.Col
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Events(rctx)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Events(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.Event); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/Swejal08/go-ggqlen/graph/model.Event`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2774,8 +3027,28 @@ func (ec *executionContext) _Query_event(ctx context.Context, field graphql.Coll
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Event(rctx, fc.Args["eventId"].(int))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Event(rctx, fc.Args["eventId"].(int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.Event); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.Event`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2840,8 +3113,28 @@ func (ec *executionContext) _Query_totalExpense(ctx context.Context, field graph
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TotalExpense(rctx, fc.Args["eventId"].(int))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().TotalExpense(rctx, fc.Args["eventId"].(int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.TotalExpense); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.TotalExpense`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2900,8 +3193,28 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Users(rctx)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Users(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.CheckUserIdExists == nil {
+				return nil, errors.New("directive CheckUserIdExists is not implemented")
+			}
+			return ec.directives.CheckUserIdExists(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.User); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/Swejal08/go-ggqlen/graph/model.User`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)

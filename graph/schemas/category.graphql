@@ -1,3 +1,5 @@
+#import "directive.graphql"
+
 type Category {
   id: ID!
   categoryName: String!
@@ -20,7 +22,7 @@ input DeleteCategory {
 }
 
 extend type Mutation {
-  createCategory(input: NewCategory!): Category!
-  updateCategory(input: UpdateCategory!): String
-  deleteCategory(input: DeleteCategory!): String
+  createCategory(input: NewCategory!): Category! @CheckUserIdExists
+  updateCategory(input: UpdateCategory!): String @CheckUserIdExists
+  deleteCategory(input: DeleteCategory!): String @CheckUserIdExists
 }

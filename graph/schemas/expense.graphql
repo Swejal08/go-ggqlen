@@ -1,4 +1,5 @@
 #import "event.graphql"
+#import "directive.graphql"
 
 type Expense {
   id: ID!
@@ -44,11 +45,11 @@ input DeleteExpense {
 }
 
 extend type Query {
-  totalExpense(eventId: Int!): TotalExpense
+  totalExpense(eventId: Int!): TotalExpense @CheckUserIdExists
 }
 
 extend type Mutation {
-  createExpense(input: NewExpense!): Expense!
-  updateExpense(input: UpdateExpense!): String
-  deleteExpense(input: DeleteExpense!): String
+  createExpense(input: NewExpense!): Expense! @CheckUserIdExists
+  updateExpense(input: UpdateExpense!): String @CheckUserIdExists
+  deleteExpense(input: DeleteExpense!): String @CheckUserIdExists
 }

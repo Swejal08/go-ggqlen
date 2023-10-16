@@ -1,3 +1,5 @@
+#import "directive.graphql"
+
 type Event {
   id: ID!
   name: String!
@@ -29,12 +31,12 @@ input DeleteEvent {
 }
 
 type Query {
-  events: [Event!]!
-  event(eventId: Int!): Event
+  events: [Event!]! @CheckUserIdExists
+  event(eventId: Int!): Event @CheckUserIdExists
 }
 
 type Mutation {
-  createEvent(input: NewEvent!): Event!
-  updateEvent(input: UpdateEvent!): String
-  deleteEvent(input: DeleteEvent!): String
+  createEvent(input: NewEvent!): Event! @CheckUserIdExists
+  updateEvent(input: UpdateEvent!): String @CheckUserIdExists
+  deleteEvent(input: DeleteEvent!): String @CheckUserIdExists
 }

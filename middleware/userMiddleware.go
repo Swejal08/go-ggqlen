@@ -18,10 +18,7 @@ func UserMiddleware() func(http.Handler) http.Handler {
 			userId := r.Header.Get("UserId")
 
 			if userId == "" {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusUnauthorized)
-				errMsg := `{"error": "Header not found"}`
-				w.Write([]byte(errMsg))
+				next.ServeHTTP(w, r)
 				return
 			}
 
