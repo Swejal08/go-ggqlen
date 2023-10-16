@@ -19,6 +19,12 @@ type Category struct {
 	CategoryName string `json:"categoryName"`
 }
 
+type CategoryExpense struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Expense int    `json:"expense"`
+}
+
 type DeleteCategory struct {
 	EventID int    `json:"eventId"`
 	ID      string `json:"id"`
@@ -50,12 +56,12 @@ type EventMembership struct {
 }
 
 type Expense struct {
-	ID          string  `json:"id"`
-	EventID     int     `json:"eventId"`
-	ItemName    string  `json:"itemName"`
-	Cost        int     `json:"cost"`
-	Description *string `json:"description,omitempty"`
-	CategoryID  int     `json:"categoryId"`
+	ID          string    `json:"id"`
+	EventID     int       `json:"eventId"`
+	ItemName    string    `json:"itemName"`
+	Cost        int       `json:"cost"`
+	Description *string   `json:"description,omitempty"`
+	CategoryID  *Category `json:"categoryId,omitempty"`
 }
 
 type NewCategory struct {
@@ -88,6 +94,12 @@ type NewUser struct {
 type RemoveEventMembership struct {
 	EventID int `json:"eventId"`
 	UserID  int `json:"userId"`
+}
+
+type TotalExpense struct {
+	TotalExpense int                `json:"totalExpense"`
+	Name         string             `json:"name"`
+	Category     []*CategoryExpense `json:"category"`
 }
 
 type UpdateCategory struct {

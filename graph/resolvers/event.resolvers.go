@@ -14,12 +14,11 @@ import (
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
 	"github.com/Swejal08/go-ggqlen/initializer"
-	"github.com/doug-martin/goqu/v9"
+	goqu "github.com/doug-martin/goqu/v9"
 )
 
 // CreateEvent is the resolver for the createEvent field.
 func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent) (*model.Event, error) {
-
 	userId := ctx.Value("userId").(string)
 
 	uId, err := strconv.Atoi(userId)
@@ -132,7 +131,6 @@ func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEv
 
 // Events is the resolver for the events field.
 func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
-
 	userId := ctx.Value("userId").(string)
 
 	uId, err := strconv.Atoi(userId)
@@ -187,7 +185,6 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 
 // Event is the resolver for the event field.
 func (r *queryResolver) Event(ctx context.Context, eventID int) (*model.Event, error) {
-
 	userId := ctx.Value("userId").(string)
 
 	uId, err := strconv.Atoi(userId)

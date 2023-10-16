@@ -100,8 +100,6 @@ func (r *mutationResolver) DeleteExpense(ctx context.Context, input model.Delete
 
 	expense, err := services.GetExpense(id)
 
-	fmt.Println(expense)
-
 	if expense == nil {
 		return nil, err
 	}
@@ -114,4 +112,37 @@ func (r *mutationResolver) DeleteExpense(ctx context.Context, input model.Delete
 
 	successMessage := "Expense has been deleted"
 	return &successMessage, nil
+}
+
+// TotalExpense is the resolver for the totalExpense field.
+func (r *queryResolver) TotalExpense(ctx context.Context, eventID int) (*model.TotalExpense, error) {
+	userId := ctx.Value("userId").(string)
+
+	uId, err := strconv.Atoi(userId)
+
+	if err != nil {
+		fmt.Println("error converting ID to int: %w", err)
+	}
+
+	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
+
+	hasAccess := accessControl.Check(allowedRoles, uId, eventID)
+
+	if !hasAccess {
+		panic("Access denied")
+	}
+
+	event, err := services.GetEvent(eventID)
+
+	if event == nil {
+		return nil, err
+	}
+
+	totalExpense, err := services.GetTotalExpensesBasedOnCategory(event)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return totalExpense, nil
 }

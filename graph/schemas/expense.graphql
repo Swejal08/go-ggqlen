@@ -1,10 +1,24 @@
+#import "event.graphql"
+
 type Expense {
   id: ID!
   eventId: Int!
   itemName: String!
   cost: Int!
   description: String
-  categoryId: Int!
+  categoryId: Category
+}
+
+type CategoryExpense {
+  id: ID!
+  name: String!
+  expense: Int!
+}
+
+type TotalExpense {
+  totalExpense: Int!
+  name: String!
+  category: [CategoryExpense]!
 }
 
 input NewExpense {
@@ -27,6 +41,10 @@ input UpdateExpense {
 input DeleteExpense {
   id: ID!
   eventId: Int!
+}
+
+extend type Query {
+  totalExpense(eventId: Int!): TotalExpense
 }
 
 extend type Mutation {

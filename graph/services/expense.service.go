@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/initializer"
@@ -37,13 +38,14 @@ func CreateExpense(body model.NewExpense) (*model.Expense, error) {
 		return nil, err
 	}
 
+	// TODO: Need to fetch category from another table instead of sending categoryId
+
 	newEvent := &model.Expense{
 		ID:          "1",
 		EventID:     body.EventID,
 		ItemName:    body.ItemName,
 		Cost:        body.Cost,
 		Description: body.Description,
-		CategoryID:  body.CategoryID,
 	}
 
 	return newEvent, nil
@@ -119,5 +121,69 @@ func DeleteExpense(expenseId int) error {
 	}
 
 	return nil
+
+}
+
+func GetTotalExpensesBasedOnCategory(event *model.Event) (*model.TotalExpense, error) {
+
+	eventId, err := strconv.Atoi(event.ID)
+
+	if err != nil {
+		fmt.Println("error converting ID to int: %w", err)
+	}
+
+	database := initializer.GetDB()
+
+	queryBuilder := initializer.GetQueryBuilder()
+
+	ds := queryBuilder.
+		Select(
+			goqu.I("category.id").As("category_id"),
+			goqu.I("category.category_name").As("category_name"),
+			goqu.SUM("expense.cost").As("expense"),
+		).
+		From("event").InnerJoin(goqu.T("expense"), goqu.On(goqu.Ex{"event.id": goqu.I("event_id")})).
+		InnerJoin(goqu.T("category"), goqu.On(goqu.Ex{"category_id": goqu.I("category.id")})).Where(goqu.Ex{"event.id": eventId}).GroupBy("category.id", "category.category_name")
+
+	sqlQuery, _, err := ds.ToSQL()
+
+	if err != nil {
+		fmt.Println("An error occurred while generating the SQL", err.Error())
+		return nil, err
+	}
+
+	rows, err := database.Query(sqlQuery)
+
+	if err != nil {
+		fmt.Println("An error occurred while executing the SQL", err.Error())
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var categoryResponse []*model.CategoryExpense
+	totalExpense := 0
+	for rows.Next() {
+		category := &model.CategoryExpense{}
+		if err := rows.Scan(&category.ID, &category.Name, &category.Expense); err != nil {
+			fmt.Println("An error occurred while scanning rows", err.Error())
+		}
+
+		categoryResponse = append(categoryResponse, category)
+		totalExpense += *&category.Expense
+
+	}
+
+	if err := rows.Err(); err != nil {
+		fmt.Println("An error occurred after iterating through rows", err.Error())
+	}
+
+	expense := &model.TotalExpense{
+		TotalExpense: totalExpense,
+		Name:         event.Name,
+		Category:     categoryResponse,
+	}
+
+	return expense, nil
 
 }
