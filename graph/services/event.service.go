@@ -76,6 +76,51 @@ func GetEvent(eventId string) (*model.Event, error) {
 
 }
 
+func GetMyEvents(userId string) ([]*model.Event, error) {
+	database := initializer.GetDB()
+
+	queryBuilder := initializer.GetQueryBuilder()
+
+	ds := queryBuilder.Select(
+		goqu.I("event.id").As("event_id"), "name", "description",
+		"location").
+		From("event_membership").InnerJoin(goqu.T("event"), goqu.On(goqu.Ex{"event_id": goqu.I("event.id")})).Where(goqu.Ex{"event_membership.user_id": userId})
+
+	sql, _, err := ds.ToSQL()
+	if err != nil {
+		fmt.Println("An error occurred while generating the SQL", err.Error())
+	}
+
+	rows, err := database.Query(sql)
+
+	if err != nil {
+		fmt.Println("An error occurred while executing the SQL", err.Error())
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var events []*model.Event
+
+	for rows.Next() {
+		event := &model.Event{}
+		if err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.Location); err != nil {
+			fmt.Println("An error occurred while scanning rows", err.Error())
+			return nil, err
+		}
+
+		events = append(events, event)
+
+	}
+
+	if err := rows.Err(); err != nil {
+		fmt.Println("An error occurred after iterating through rows", err.Error())
+		return nil, err
+	}
+
+	return events, nil
+}
+
 func UpdateEvent(body model.UpdateEvent) error {
 	database := initializer.GetDB()
 

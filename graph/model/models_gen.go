@@ -51,6 +51,14 @@ type Event struct {
 	Location    string `json:"location"`
 }
 
+type EventDetails struct {
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Location    string     `json:"location"`
+	Sessions    []*Session `json:"sessions"`
+}
+
 type EventMembership struct {
 	ID      string `json:"id"`
 	EventID string `json:"eventId"`

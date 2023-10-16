@@ -3,7 +3,6 @@ package services
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
 
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/initializer"
@@ -127,12 +126,6 @@ func DeleteExpense(expenseId string) error {
 
 func GetTotalExpensesBasedOnCategory(event *model.Event) (*model.TotalExpense, error) {
 
-	eventId, err := strconv.Atoi(event.ID)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
@@ -144,7 +137,7 @@ func GetTotalExpensesBasedOnCategory(event *model.Event) (*model.TotalExpense, e
 			goqu.SUM("expense.cost").As("expense"),
 		).
 		From("event").InnerJoin(goqu.T("expense"), goqu.On(goqu.Ex{"event.id": goqu.I("event_id")})).
-		InnerJoin(goqu.T("category"), goqu.On(goqu.Ex{"category_id": goqu.I("category.id")})).Where(goqu.Ex{"event.id": eventId}).GroupBy("category.id", "category.category_name")
+		InnerJoin(goqu.T("category"), goqu.On(goqu.Ex{"category_id": goqu.I("category.id")})).Where(goqu.Ex{"event.id": event.ID}).GroupBy("category.id", "category.category_name")
 
 	sqlQuery, _, err := ds.ToSQL()
 

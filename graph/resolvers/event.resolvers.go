@@ -7,15 +7,12 @@ package graph
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	accessControl "github.com/Swejal08/go-ggqlen/access-control"
 	"github.com/Swejal08/go-ggqlen/enums"
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
-	"github.com/Swejal08/go-ggqlen/initializer"
 	"github.com/Swejal08/go-ggqlen/utils"
-	goqu "github.com/doug-martin/goqu/v9"
 )
 
 // CreateEvent is the resolver for the createEvent field.
@@ -105,63 +102,24 @@ func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEv
 
 // Events is the resolver for the events field.
 func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
+	//TODO apply pagination
+
 	userId := ctx.Value("userId").(string)
 
-	uId, err := strconv.Atoi(userId)
+	events, err := services.GetMyEvents(userId)
 
 	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
-	database := initializer.GetDB()
-
-	queryBuilder := initializer.GetQueryBuilder()
-
-	ds := queryBuilder.Select(
-		goqu.I("event.id").As("event_id"), "name", "description",
-		"location").
-		From("event_membership").InnerJoin(goqu.T("event"), goqu.On(goqu.Ex{"event_id": goqu.I("event.id")})).Where(goqu.Ex{"event_membership.user_id": uId})
-
-	sql, _, err := ds.ToSQL()
-	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
-	}
-
-	rows, err := database.Query(sql)
-
-	if err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	var events []*model.Event
-
-	for rows.Next() {
-		event := &model.Event{}
-		if err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.Location); err != nil {
-			fmt.Println("An error occurred while scanning rows", err.Error())
-			return nil, err
-		}
-
-		events = append(events, event)
-
-	}
-
-	if err := rows.Err(); err != nil {
-		fmt.Println("An error occurred after iterating through rows", err.Error())
 		return nil, err
 	}
 
 	return events, nil
 }
 
-// Event is the resolver for the event field.
-func (r *queryResolver) Event(ctx context.Context, eventID string) (*model.Event, error) {
+// EventDetails is the resolver for the eventDetails field.
+func (r *queryResolver) EventDetails(ctx context.Context, eventID string) (*model.EventDetails, error) {
 	userId := ctx.Value("userId").(string)
 
-	allowedRoles := []enums.EventMembershipRole{enums.Admin}
+	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor, enums.Attendee}
 
 	hasAccess := accessControl.Check(allowedRoles, userId, eventID)
 
@@ -171,11 +129,23 @@ func (r *queryResolver) Event(ctx context.Context, eventID string) (*model.Event
 
 	event, err := services.GetEvent(eventID)
 
+	sessions, err := services.GetSessionByEventId(eventID)
+
+	fmt.Println(sessions)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return event, nil
+	eventDetails := &model.EventDetails{
+		ID:          event.ID,
+		Name:        event.Name,
+		Description: event.Description,
+		Location:    event.Location,
+		Sessions:    sessions,
+	}
+
+	return eventDetails, nil
 }
 
 // Mutation returns MutationResolver implementation.

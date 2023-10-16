@@ -1,10 +1,19 @@
 #import "directive.graphql"
+#import "sessions.graphql"
 
 type Event {
   id: ID!
   name: String!
   description: String!
   location: String!
+}
+
+type EventDetails {
+  id: ID!
+  name: String!
+  description: String!
+  location: String!
+  sessions: [Session!]!
 }
 
 input NewEvent {
@@ -26,7 +35,7 @@ input DeleteEvent {
 
 type Query {
   events: [Event!]! @CheckUserIdExists
-  event(eventId: ID!): Event @CheckUserIdExists
+  eventDetails(eventId: ID!): EventDetails @CheckUserIdExists
 }
 
 type Mutation {
