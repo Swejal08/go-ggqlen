@@ -14,10 +14,20 @@ import (
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
 	"github.com/Swejal08/go-ggqlen/initializer"
+	"github.com/doug-martin/goqu/v9"
 )
 
 // CreateEvent is the resolver for the createEvent field.
 func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent) (*model.Event, error) {
+
+	userId := ctx.Value("userId").(string)
+
+	uId, err := strconv.Atoi(userId)
+
+	if err != nil {
+		fmt.Println("error converting ID to int: %w", err)
+	}
+
 	event, err := services.CreateEvent(input)
 
 	if err != nil {
@@ -26,7 +36,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 
 	// replace 1 and 1 with  eventId that will come from event and userId from ctx.
 
-	err = services.CreateEventMembership(1, 1, "admin")
+	err = services.CreateEventMembership(1, uId, "admin")
 
 	if err != nil {
 		fmt.Println("Event Membership cannot be created", err.Error())
@@ -99,13 +109,7 @@ func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEv
 		panic("Access denied")
 	}
 
-	id, err := strconv.Atoi(input.ID)
-
-	if err != nil {
-		fmt.Println("error converting ID to int: %w", err)
-	}
-
-	event, err := services.GetEvent(id)
+	event, err := services.GetEvent(eventId)
 
 	if event == nil {
 		return nil, err
@@ -116,7 +120,7 @@ func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEv
 		goqu does not have softDelete out of the box
 	*/
 
-	err = services.DeleteEvent(id)
+	err = services.DeleteEvent(eventId)
 
 	if err != nil {
 		fmt.Println("Something went wrong when deleting event", err.Error())
@@ -128,11 +132,23 @@ func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEv
 
 // Events is the resolver for the events field.
 func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
+
+	userId := ctx.Value("userId").(string)
+
+	uId, err := strconv.Atoi(userId)
+
+	if err != nil {
+		fmt.Println("error converting ID to int: %w", err)
+	}
+
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	ds := queryBuilder.From("event").Select("id", "name", "description", "location", "start_date", "end_date")
+	ds := queryBuilder.Select(
+		goqu.I("event.id").As("event_id"), "name", "description",
+		"location", "start_date", "end_date").
+		From("event_membership").InnerJoin(goqu.T("event"), goqu.On(goqu.Ex{"event_id": goqu.I("event.id")})).Where(goqu.Ex{"event_membership.user_id": uId})
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
@@ -140,6 +156,7 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 	}
 
 	rows, err := database.Query(sql)
+
 	if err != nil {
 		fmt.Println("An error occurred while executing the SQL", err.Error())
 		return nil, err
@@ -166,6 +183,30 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 	}
 
 	return events, nil
+}
+
+// Event is the resolver for the event field.
+func (r *queryResolver) Event(ctx context.Context, eventID int) (*model.Event, error) {
+
+	userId := ctx.Value("userId").(string)
+
+	uId, err := strconv.Atoi(userId)
+
+	allowedRoles := []enums.EventMembershipRole{enums.Admin}
+
+	hasAccess := accessControl.Check(allowedRoles, uId, eventID)
+
+	if !hasAccess {
+		panic("You do not have event membership")
+	}
+
+	event, err := services.GetEvent(eventID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
 }
 
 // Mutation returns MutationResolver implementation.

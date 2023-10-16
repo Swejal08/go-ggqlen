@@ -30,6 +30,7 @@ input DeleteEvent {
 
 type Query {
   events: [Event!]!
+  event(eventId: Int!): Event
 }
 
 type Mutation {

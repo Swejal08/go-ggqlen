@@ -17,7 +17,6 @@ import (
 
 // CreateCategory is the resolver for the createCategory field.
 func (r *mutationResolver) CreateCategory(ctx context.Context, input model.NewCategory) (*model.Category, error) {
-
 	userId := ctx.Value("userId").(string)
 
 	uId, err := strconv.Atoi(userId)
@@ -45,7 +44,6 @@ func (r *mutationResolver) CreateCategory(ctx context.Context, input model.NewCa
 
 // UpdateCategory is the resolver for the updateCategory field.
 func (r *mutationResolver) UpdateCategory(ctx context.Context, input model.UpdateCategory) (*string, error) {
-
 	userId := ctx.Value("userId").(string)
 
 	uId, err := strconv.Atoi(userId)
