@@ -16,14 +16,14 @@ type EventMembership {
 }
 
 input AssignEventMembership {
-  eventId: Int!
-  userId: Int!
-  role: Role!
+  eventId: Int! @goTag(key: "validate", value: "required")
+  userId: Int! @goTag(key: "validate", value: "required")
+  role: Role! @goTag(key: "validate", value: "required")
 }
 
 input RemoveEventMembership {
-  eventId: Int!
-  userId: Int!
+  eventId: Int! @goTag(key: "validate", value: "required")
+  userId: Int! @goTag(key: "validate", value: "required")
 }
 
 extend type Mutation {

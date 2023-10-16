@@ -9,9 +9,9 @@ import (
 )
 
 type AssignEventMembership struct {
-	EventID int  `json:"eventId"`
-	UserID  int  `json:"userId"`
-	Role    Role `json:"role"`
+	EventID int  `json:"eventId" validate:"required"`
+	UserID  int  `json:"userId" validate:"required"`
+	Role    Role `json:"role" validate:"required"`
 }
 
 type Category struct {
@@ -26,17 +26,17 @@ type CategoryExpense struct {
 }
 
 type DeleteCategory struct {
-	EventID int    `json:"eventId"`
-	ID      string `json:"id"`
+	EventID int    `json:"eventId" validate:"required"`
+	ID      string `json:"id" validate:"required"`
 }
 
 type DeleteEvent struct {
-	ID string `json:"id"`
+	ID string `json:"id" validate:"required"`
 }
 
 type DeleteExpense struct {
-	ID      string `json:"id"`
-	EventID int    `json:"eventId"`
+	ID      string `json:"id" validate:"required"`
+	EventID int    `json:"eventId" validate:"required"`
 }
 
 type Event struct {
@@ -65,35 +65,35 @@ type Expense struct {
 }
 
 type NewCategory struct {
-	EventID      int    `json:"eventId"`
-	CategoryName string `json:"categoryName"`
+	EventID      int    `json:"eventId" validate:"required"`
+	CategoryName string `json:"categoryName" validate:"required"`
 }
 
 type NewEvent struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Location    string `json:"location"`
-	StartDate   string `json:"startDate"`
-	EndDate     string `json:"endDate"`
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description" validate:"required"`
+	Location    string `json:"location" validate:"required"`
+	StartDate   string `json:"startDate" validate:"required"`
+	EndDate     string `json:"endDate" validate:"required"`
 }
 
 type NewExpense struct {
-	EventID     int     `json:"eventId"`
-	ItemName    string  `json:"itemName"`
-	Cost        int     `json:"cost"`
+	EventID     int     `json:"eventId" validate:"required"`
+	ItemName    string  `json:"itemName" validate:"required"`
+	Cost        int     `json:"cost" validate:"required,int"`
 	Description *string `json:"description,omitempty"`
-	CategoryID  int     `json:"categoryId"`
+	CategoryID  int     `json:"categoryId" validate:"required"`
 }
 
 type NewUser struct {
-	Name  string  `json:"name"`
-	Email string  `json:"email"`
+	Name  string  `json:"name" validate:"required"`
+	Email string  `json:"email" validate:"required,email"`
 	Phone *string `json:"phone,omitempty"`
 }
 
 type RemoveEventMembership struct {
-	EventID int `json:"eventId"`
-	UserID  int `json:"userId"`
+	EventID int `json:"eventId" validate:"required"`
+	UserID  int `json:"userId" validate:"required"`
 }
 
 type TotalExpense struct {
@@ -103,25 +103,25 @@ type TotalExpense struct {
 }
 
 type UpdateCategory struct {
-	ID           string  `json:"id"`
-	EventID      int     `json:"eventId"`
-	CategoryName *string `json:"categoryName,omitempty"`
+	ID           string  `json:"id" validate:"required"`
+	EventID      int     `json:"eventId" validate:"required"`
+	CategoryName *string `json:"categoryName,omitempty" validate:"required"`
 }
 
 type UpdateEvent struct {
-	ID          string  `json:"id"`
+	ID          string  `json:"id" validate:"required"`
 	Name        *string `json:"name,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Location    *string `json:"location,omitempty"`
-	StartDate   *string `json:"startDate,omitempty"`
-	EndDate     *string `json:"endDate,omitempty"`
+	StartDate   *string `json:"startDate,omitempty" validate:"date"`
+	EndDate     *string `json:"endDate,omitempty" validate:"date"`
 }
 
 type UpdateExpense struct {
-	ID          string  `json:"id"`
-	EventID     int     `json:"eventId"`
+	ID          string  `json:"id" validate:"required"`
+	EventID     int     `json:"eventId" validate:"required"`
 	ItemName    *string `json:"itemName,omitempty"`
-	Cost        *int    `json:"cost,omitempty"`
+	Cost        *int    `json:"cost,omitempty" validate:"int"`
 	Description *string `json:"description,omitempty"`
 	CategoryID  *int    `json:"categoryId,omitempty"`
 }

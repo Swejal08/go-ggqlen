@@ -14,11 +14,16 @@ import (
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
 	"github.com/Swejal08/go-ggqlen/initializer"
+	"github.com/Swejal08/go-ggqlen/utils"
 	goqu "github.com/doug-martin/goqu/v9"
 )
 
 // CreateEvent is the resolver for the createEvent field.
 func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent) (*model.Event, error) {
+	if err := utils.ValidateInput(input); err != nil {
+		return nil, err
+	}
+
 	userId := ctx.Value("userId").(string)
 
 	uId, err := strconv.Atoi(userId)

@@ -662,19 +662,19 @@ type Category {
 }
 
 input NewCategory {
-  eventId: Int!
-  categoryName: String!
+  eventId: Int! @goTag(key: "validate", value: "required")
+  categoryName: String! @goTag(key: "validate", value: "required")
 }
 
 input UpdateCategory {
-  id: ID!
-  eventId: Int!
-  categoryName: String
+  id: ID! @goTag(key: "validate", value: "required")
+  eventId: Int! @goTag(key: "validate", value: "required")
+  categoryName: String @goTag(key: "validate", value: "required")
 }
 
 input DeleteCategory {
-  eventId: Int!
-  id: ID!
+  eventId: Int! @goTag(key: "validate", value: "required")
+  id: ID! @goTag(key: "validate", value: "required")
 }
 
 extend type Mutation {
@@ -684,6 +684,11 @@ extend type Mutation {
 }
 `, BuiltIn: false},
 	{Name: "../schemas/directive.graphql", Input: `directive @CheckUserIdExists on FIELD_DEFINITION
+
+directive @goTag(
+  key: String!
+  value: String
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 `, BuiltIn: false},
 	{Name: "../schemas/event.graphql", Input: `#import "directive.graphql"
 
@@ -697,24 +702,24 @@ type Event {
 }
 
 input NewEvent {
-  name: String!
-  description: String!
-  location: String!
-  startDate: String!
-  endDate: String!
+  name: String! @goTag(key: "validate", value: "required")
+  description: String! @goTag(key: "validate", value: "required")
+  location: String! @goTag(key: "validate", value: "required")
+  startDate: String! @goTag(key: "validate", value: "required")
+  endDate: String! @goTag(key: "validate", value: "required")
 }
 
 input UpdateEvent {
-  id: ID!
+  id: ID! @goTag(key: "validate", value: "required")
   name: String
   description: String
   location: String
-  startDate: String
-  endDate: String
+  startDate: String @goTag(key: "validate", value: "date")
+  endDate: String @goTag(key: "validate", value: "date")
 }
 
 input DeleteEvent {
-  id: ID!
+  id: ID! @goTag(key: "validate", value: "required")
 }
 
 type Query {
@@ -746,14 +751,14 @@ type EventMembership {
 }
 
 input AssignEventMembership {
-  eventId: Int!
-  userId: Int!
-  role: Role!
+  eventId: Int! @goTag(key: "validate", value: "required")
+  userId: Int! @goTag(key: "validate", value: "required")
+  role: Role! @goTag(key: "validate", value: "required")
 }
 
 input RemoveEventMembership {
-  eventId: Int!
-  userId: Int!
+  eventId: Int! @goTag(key: "validate", value: "required")
+  userId: Int! @goTag(key: "validate", value: "required")
 }
 
 extend type Mutation {
@@ -788,25 +793,25 @@ type TotalExpense {
 }
 
 input NewExpense {
-  eventId: Int!
-  itemName: String!
-  cost: Int!
+  eventId: Int! @goTag(key: "validate", value: "required")
+  itemName: String! @goTag(key: "validate", value: "required")
+  cost: Int! @goTag(key: "validate", value: "required,int")
   description: String
-  categoryId: Int!
+  categoryId: Int! @goTag(key: "validate", value: "required")
 }
 
 input UpdateExpense {
-  id: ID!
-  eventId: Int!
+  id: ID! @goTag(key: "validate", value: "required")
+  eventId: Int! @goTag(key: "validate", value: "required")
   itemName: String
-  cost: Int
+  cost: Int @goTag(key: "validate", value: "int")
   description: String
   categoryId: Int
 }
 
 input DeleteExpense {
-  id: ID!
-  eventId: Int!
+  id: ID! @goTag(key: "validate", value: "required")
+  eventId: Int! @goTag(key: "validate", value: "required")
 }
 
 extend type Query {
@@ -829,8 +834,8 @@ type User {
 }
 
 input NewUser {
-  name: String!
-  email: String!
+  name: String! @goTag(key: "validate", value: "required")
+  email: String! @goTag(key: "validate", value: "required,email")
   phone: String
 }
 

@@ -6,19 +6,19 @@ type Category {
 }
 
 input NewCategory {
-  eventId: Int!
-  categoryName: String!
+  eventId: Int! @goTag(key: "validate", value: "required")
+  categoryName: String! @goTag(key: "validate", value: "required")
 }
 
 input UpdateCategory {
-  id: ID!
-  eventId: Int!
-  categoryName: String
+  id: ID! @goTag(key: "validate", value: "required")
+  eventId: Int! @goTag(key: "validate", value: "required")
+  categoryName: String @goTag(key: "validate", value: "required")
 }
 
 input DeleteCategory {
-  eventId: Int!
-  id: ID!
+  eventId: Int! @goTag(key: "validate", value: "required")
+  id: ID! @goTag(key: "validate", value: "required")
 }
 
 extend type Mutation {

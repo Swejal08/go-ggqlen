@@ -10,24 +10,24 @@ type Event {
 }
 
 input NewEvent {
-  name: String!
-  description: String!
-  location: String!
-  startDate: String!
-  endDate: String!
+  name: String! @goTag(key: "validate", value: "required")
+  description: String! @goTag(key: "validate", value: "required")
+  location: String! @goTag(key: "validate", value: "required")
+  startDate: String! @goTag(key: "validate", value: "required")
+  endDate: String! @goTag(key: "validate", value: "required")
 }
 
 input UpdateEvent {
-  id: ID!
+  id: ID! @goTag(key: "validate", value: "required")
   name: String
   description: String
   location: String
-  startDate: String
-  endDate: String
+  startDate: String @goTag(key: "validate", value: "date")
+  endDate: String @goTag(key: "validate", value: "date")
 }
 
 input DeleteEvent {
-  id: ID!
+  id: ID! @goTag(key: "validate", value: "required")
 }
 
 type Query {

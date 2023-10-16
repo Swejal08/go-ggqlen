@@ -8,8 +8,8 @@ type User {
 }
 
 input NewUser {
-  name: String!
-  email: String!
+  name: String! @goTag(key: "validate", value: "required")
+  email: String! @goTag(key: "validate", value: "required,email")
   phone: String
 }
 

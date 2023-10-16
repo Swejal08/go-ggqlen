@@ -10,10 +10,14 @@ import (
 
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
+	"github.com/Swejal08/go-ggqlen/utils"
 )
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
+	if err := utils.ValidateInput(input); err != nil {
+		return nil, err
+	}
 	user, err := services.CreateUser(input)
 
 	if err != nil {

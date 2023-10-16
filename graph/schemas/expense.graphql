@@ -23,25 +23,25 @@ type TotalExpense {
 }
 
 input NewExpense {
-  eventId: Int!
-  itemName: String!
-  cost: Int!
+  eventId: Int! @goTag(key: "validate", value: "required")
+  itemName: String! @goTag(key: "validate", value: "required")
+  cost: Int! @goTag(key: "validate", value: "required,int")
   description: String
-  categoryId: Int!
+  categoryId: Int! @goTag(key: "validate", value: "required")
 }
 
 input UpdateExpense {
-  id: ID!
-  eventId: Int!
+  id: ID! @goTag(key: "validate", value: "required")
+  eventId: Int! @goTag(key: "validate", value: "required")
   itemName: String
-  cost: Int
+  cost: Int @goTag(key: "validate", value: "int")
   description: String
   categoryId: Int
 }
 
 input DeleteExpense {
-  id: ID!
-  eventId: Int!
+  id: ID! @goTag(key: "validate", value: "required")
+  eventId: Int! @goTag(key: "validate", value: "required")
 }
 
 extend type Query {
