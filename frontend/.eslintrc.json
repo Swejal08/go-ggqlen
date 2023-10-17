@@ -1,0 +1,10 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "parser": "@typescript-eslint/parser",
+  "rules": {
+    "react/jsx-one-expression-per-line": "off",
+    "no-console": 2,
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  }
+}
