@@ -10,9 +10,11 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 
+	"github.com/Swejal08/go-ggqlen/directives"
 	graph "github.com/Swejal08/go-ggqlen/graph/resolvers"
 	resolvers "github.com/Swejal08/go-ggqlen/graph/resolvers"
 	"github.com/Swejal08/go-ggqlen/initializer"
+	"github.com/Swejal08/go-ggqlen/middleware"
 	_ "github.com/lib/pq"
 )
 
@@ -42,9 +44,9 @@ func main() {
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 
-	// router.Use(middleware.UserMiddleware())
+	router.Use(middleware.AuthMiddleware())
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &resolvers.Resolver{}}))
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &resolvers.Resolver{}, Directives: resolvers.DirectiveRoot{Authenticate: directives.Authenticate()}}))
 
 	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)

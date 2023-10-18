@@ -42,7 +42,7 @@ type Query {
 }
 
 type Mutation {
-  createEvent(input: NewEvent!): Event!
+  createEvent(input: NewEvent!): Event! @Authenticate
   updateEvent(input: UpdateEvent!): String
   deleteEvent(input: DeleteEvent!): String
 }

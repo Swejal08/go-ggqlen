@@ -6,6 +6,7 @@ type User {
   name: String!
   email: String!
   phone: String
+  password: String
 }
 
 type UserDetails {
@@ -20,6 +21,7 @@ input NewUser {
   name: String! @goTag(key: "validate", value: "required")
   email: String! @goTag(key: "validate", value: "required,email")
   phone: String
+  password: String!
 }
 
 # Note that userId is Id of loggedIn user and memberId is the id of the user of which we want the details

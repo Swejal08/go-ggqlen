@@ -20,13 +20,24 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	if err := utils.ValidateInput(input); err != nil {
 		return nil, err
 	}
-	user, err := services.CreateUser(input)
+
+	user, err := services.GetUserByEmail(input.Email)
 
 	if err != nil {
-		fmt.Println("User cannot be created", err.Error())
+		return nil, err
 	}
 
-	return user, nil
+	if user.ID != "" {
+		return nil, fmt.Errorf("User already exists")
+	}
+
+	createdUser, err := services.CreateUser(input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return createdUser, nil
 }
 
 // NonEventMembers is the resolver for the nonEventMembers field.

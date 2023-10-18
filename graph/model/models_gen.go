@@ -86,6 +86,17 @@ type Expense struct {
 	CategoryID  string  `json:"categoryId"`
 }
 
+type InputLogin struct {
+	Email    string `json:"email" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+type Login struct {
+	ID          string `json:"id"`
+	Email       string `json:"email"`
+	AccessToken string `json:"accessToken"`
+}
+
 type NewCategory struct {
 	UserID       string `json:"userId" validate:"required"`
 	EventID      string `json:"eventId" validate:"required"`
@@ -116,9 +127,10 @@ type NewSession struct {
 }
 
 type NewUser struct {
-	Name  string  `json:"name" validate:"required"`
-	Email string  `json:"email" validate:"required,email"`
-	Phone *string `json:"phone,omitempty"`
+	Name     string  `json:"name" validate:"required"`
+	Email    string  `json:"email" validate:"required,email"`
+	Phone    *string `json:"phone,omitempty"`
+	Password string  `json:"password"`
 }
 
 type RemoveEventMembership struct {
@@ -173,10 +185,11 @@ type UpdateSession struct {
 }
 
 type User struct {
-	ID    string  `json:"id"`
-	Name  string  `json:"name"`
-	Email string  `json:"email"`
-	Phone *string `json:"phone,omitempty"`
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	Phone    *string `json:"phone,omitempty"`
+	Password *string `json:"password,omitempty"`
 }
 
 type UserDetails struct {
