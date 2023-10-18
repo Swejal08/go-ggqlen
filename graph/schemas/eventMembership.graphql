@@ -1,6 +1,7 @@
 #import "event.graphql"
 #import "user.graphql"
 #import "directive.graphql"
+#import "user.graphql"
 
 enum Role {
   contributor
@@ -15,9 +16,16 @@ type EventMembership {
   role: Role!
 }
 
+type EventMembersDetail {
+  id: ID!
+  role: Role!
+  user: User
+}
+
 input AssignEventMembership {
+  userId: ID!
   eventId: ID! @goTag(key: "validate", value: "required")
-  userId: ID! @goTag(key: "validate", value: "required")
+  memberId: ID! @goTag(key: "validate", value: "required")
   role: Role! @goTag(key: "validate", value: "required")
 }
 
@@ -26,9 +34,11 @@ input RemoveEventMembership {
   userId: ID! @goTag(key: "validate", value: "required")
 }
 
+extend type Query {
+  eventMembers(userId: ID!, eventId: ID!): [EventMembersDetail]!
+}
+
 extend type Mutation {
   assignEventMembership(input: AssignEventMembership!): String
-    @CheckUserIdExists
   removeEventMembership(input: RemoveEventMembership!): String
-    @CheckUserIdExists
 }

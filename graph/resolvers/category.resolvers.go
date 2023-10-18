@@ -20,11 +20,9 @@ func (r *mutationResolver) CreateCategory(ctx context.Context, input model.NewCa
 		return nil, err
 	}
 
-	userId := ctx.Value("userId").(string)
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -45,11 +43,9 @@ func (r *mutationResolver) UpdateCategory(ctx context.Context, input model.Updat
 		return nil, err
 	}
 
-	userId := ctx.Value("userId").(string)
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -73,11 +69,9 @@ func (r *mutationResolver) UpdateCategory(ctx context.Context, input model.Updat
 
 // DeleteCategory is the resolver for the deleteCategory field.
 func (r *mutationResolver) DeleteCategory(ctx context.Context, input model.DeleteCategory) (*string, error) {
-	userId := ctx.Value("userId").(string)
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -98,4 +92,23 @@ func (r *mutationResolver) DeleteCategory(ctx context.Context, input model.Delet
 
 	successMessage := "Category has been deleted"
 	return &successMessage, nil
+}
+
+// GetCategories is the resolver for the getCategories field.
+func (r *queryResolver) GetCategories(ctx context.Context, userID string, eventID string) ([]*model.Category, error) {
+	allowedRoles := []enums.EventMembershipRole{enums.Admin}
+
+	accessError := accessControl.Check(allowedRoles, userID, eventID)
+
+	if accessError != nil {
+		return nil, accessError
+	}
+
+	categories, err := services.GetCategoriesByEvent(eventID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return categories, nil
 }

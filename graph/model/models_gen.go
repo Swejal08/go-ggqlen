@@ -9,9 +9,10 @@ import (
 )
 
 type AssignEventMembership struct {
-	EventID string `json:"eventId" validate:"required"`
-	UserID  string `json:"userId" validate:"required"`
-	Role    Role   `json:"role" validate:"required"`
+	UserID   string `json:"userId"`
+	EventID  string `json:"eventId" validate:"required"`
+	MemberID string `json:"memberId" validate:"required"`
+	Role     Role   `json:"role" validate:"required"`
 }
 
 type Category struct {
@@ -26,21 +27,25 @@ type CategoryExpense struct {
 }
 
 type DeleteCategory struct {
+	UserID  string `json:"userId" validate:"required"`
 	EventID string `json:"eventId" validate:"required"`
 	ID      string `json:"id" validate:"required"`
 }
 
 type DeleteEvent struct {
-	ID string `json:"id" validate:"required"`
+	UserID string `json:"userId" validate:"required"`
+	ID     string `json:"id" validate:"required"`
 }
 
 type DeleteExpense struct {
 	ID      string `json:"id" validate:"required"`
+	UserID  string `json:"userId" validate:"required"`
 	EventID string `json:"eventId" validate:"required"`
 }
 
 type DeleteSession struct {
 	ID      string `json:"id"`
+	UserID  string `json:"userId"`
 	EventID string `json:"eventId"`
 }
 
@@ -57,6 +62,12 @@ type EventDetails struct {
 	Description string     `json:"description"`
 	Location    string     `json:"location"`
 	Sessions    []*Session `json:"sessions"`
+}
+
+type EventMembersDetail struct {
+	ID   string `json:"id"`
+	Role Role   `json:"role"`
+	User *User  `json:"user,omitempty"`
 }
 
 type EventMembership struct {
@@ -76,25 +87,29 @@ type Expense struct {
 }
 
 type NewCategory struct {
+	UserID       string `json:"userId" validate:"required"`
 	EventID      string `json:"eventId" validate:"required"`
 	CategoryName string `json:"categoryName" validate:"required"`
 }
 
 type NewEvent struct {
+	UserID      string `json:"userId" validate:"required"`
 	Name        string `json:"name" validate:"required"`
 	Description string `json:"description" validate:"required"`
 	Location    string `json:"location" validate:"required"`
 }
 
 type NewExpense struct {
+	UserID      string  `json:"userId" validate:"required"`
 	EventID     string  `json:"eventId" validate:"required"`
 	ItemName    string  `json:"itemName" validate:"required"`
-	Cost        int     `json:"cost" validate:"required,int"`
+	Cost        int     `json:"cost" validate:"required"`
 	Description *string `json:"description,omitempty"`
 	CategoryID  string  `json:"categoryId" validate:"required"`
 }
 
 type NewSession struct {
+	UserID    string `json:"userId"`
 	EventID   string `json:"eventId"`
 	StartDate string `json:"startDate"`
 	EndDate   string `json:"endDate"`
@@ -126,11 +141,13 @@ type TotalExpense struct {
 
 type UpdateCategory struct {
 	ID           string  `json:"id" validate:"required"`
+	UserID       string  `json:"userId" validate:"required"`
 	EventID      string  `json:"eventId" validate:"required"`
 	CategoryName *string `json:"categoryName,omitempty" validate:"required"`
 }
 
 type UpdateEvent struct {
+	UserID      string  `json:"userId" validate:"required"`
 	ID          string  `json:"id" validate:"required"`
 	Name        *string `json:"name,omitempty"`
 	Description *string `json:"description,omitempty"`
@@ -139,6 +156,7 @@ type UpdateEvent struct {
 
 type UpdateExpense struct {
 	ID          string  `json:"id" validate:"required"`
+	UserID      string  `json:"userId" validate:"required"`
 	EventID     string  `json:"eventId" validate:"required"`
 	ItemName    *string `json:"itemName,omitempty"`
 	Cost        *int    `json:"cost,omitempty" validate:"int"`
@@ -148,6 +166,7 @@ type UpdateExpense struct {
 
 type UpdateSession struct {
 	ID        string  `json:"id"`
+	UserID    string  `json:"userId"`
 	EventID   string  `json:"eventId"`
 	StartDate *string `json:"startDate,omitempty"`
 	EndDate   *string `json:"endDate,omitempty"`
@@ -158,6 +177,14 @@ type User struct {
 	Name  string  `json:"name"`
 	Email string  `json:"email"`
 	Phone *string `json:"phone,omitempty"`
+}
+
+type UserDetails struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+	Role  Role   `json:"role"`
 }
 
 type Role string

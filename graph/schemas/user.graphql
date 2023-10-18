@@ -1,4 +1,5 @@
 #import "directive.graphql"
+#import "eventMembership.graphql"
 
 type User {
   id: ID!
@@ -7,10 +8,25 @@ type User {
   phone: String
 }
 
+type UserDetails {
+  id: ID!
+  name: String!
+  email: String!
+  phone: String!
+  role: Role!
+}
+
 input NewUser {
   name: String! @goTag(key: "validate", value: "required")
   email: String! @goTag(key: "validate", value: "required,email")
   phone: String
+}
+
+# Note that userId is Id of loggedIn user and memberId is the id of the user of which we want the details
+
+extend type Query {
+  nonEventMembers(userId: ID!, eventId: ID!): [User]!
+  userDetails(userId: ID!, memberId: ID!, eventId: ID!): UserDetails!
 }
 
 extend type Mutation {

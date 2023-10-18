@@ -21,11 +21,9 @@ func (r *mutationResolver) CreateSession(ctx context.Context, input model.NewSes
 		return nil, err
 	}
 
-	userId := ctx.Value("userId").(string)
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -46,11 +44,9 @@ func (r *mutationResolver) UpdateSession(ctx context.Context, input model.Update
 		return nil, err
 	}
 
-	userId := ctx.Value("userId").(string)
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -74,11 +70,9 @@ func (r *mutationResolver) UpdateSession(ctx context.Context, input model.Update
 
 // DeleteSession is the resolver for the deleteSession field.
 func (r *mutationResolver) DeleteSession(ctx context.Context, input model.DeleteSession) (*string, error) {
-	userId := ctx.Value("userId").(string)
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
+	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError

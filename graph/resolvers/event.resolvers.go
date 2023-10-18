@@ -21,15 +21,13 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 		return nil, err
 	}
 
-	userId := ctx.Value("userId").(string)
-
 	event, err := services.CreateEvent(input)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = services.CreateEventMembership(event.ID, userId, "admin")
+	err = services.CreateEventMembership(event.ID, input.UserID, "admin")
 
 	if err != nil {
 		return nil, err
@@ -44,11 +42,9 @@ func (r *mutationResolver) UpdateEvent(ctx context.Context, input model.UpdateEv
 		return nil, err
 	}
 
-	userId := ctx.Value("userId").(string)
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	err := accessControl.Check(allowedRoles, userId, input.ID)
+	err := accessControl.Check(allowedRoles, input.UserID, input.ID)
 
 	if err != nil {
 		return nil, fmt.Errorf("This resource is forbidden")
@@ -72,11 +68,9 @@ func (r *mutationResolver) UpdateEvent(ctx context.Context, input model.UpdateEv
 
 // DeleteEvent is the resolver for the deleteEvent field.
 func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEvent) (*string, error) {
-	userId := ctx.Value("userId").(string)
-
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	accessError := accessControl.Check(allowedRoles, userId, input.ID)
+	accessError := accessControl.Check(allowedRoles, input.UserID, input.ID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -104,12 +98,9 @@ func (r *mutationResolver) DeleteEvent(ctx context.Context, input model.DeleteEv
 }
 
 // Events is the resolver for the events field.
-func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
+func (r *queryResolver) Events(ctx context.Context, userID string) ([]*model.Event, error) {
 	//TODO apply pagination
-
-	userId := ctx.Value("userId").(string)
-
-	events, err := services.GetMyEvents(userId)
+	events, err := services.GetMyEvents(userID)
 
 	if err != nil {
 		return nil, err
@@ -119,12 +110,10 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 }
 
 // EventDetails is the resolver for the eventDetails field.
-func (r *queryResolver) EventDetails(ctx context.Context, eventID string) (*model.EventDetails, error) {
-	userId := ctx.Value("userId").(string)
-
+func (r *queryResolver) EventDetails(ctx context.Context, userID string, eventID string) (*model.EventDetails, error) {
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor, enums.Attendee}
 
-	accessError := accessControl.Check(allowedRoles, userId, eventID)
+	accessError := accessControl.Check(allowedRoles, userID, eventID)
 
 	if accessError != nil {
 		return nil, accessError

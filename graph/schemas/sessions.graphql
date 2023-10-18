@@ -6,6 +6,7 @@ type Session {
 }
 
 input NewSession {
+  userId: ID!
   eventId: ID!
   startDate: String!
   endDate: String!
@@ -13,6 +14,7 @@ input NewSession {
 
 input UpdateSession {
   id: ID!
+  userId: ID!
   eventId: ID!
   startDate: String
   endDate: String
@@ -20,11 +22,12 @@ input UpdateSession {
 
 input DeleteSession {
   id: ID!
+  userId: ID!
   eventId: ID!
 }
 
 extend type Mutation {
-  createSession(input: NewSession!): Session! @CheckUserIdExists
-  updateSession(input: UpdateSession!): String @CheckUserIdExists
-  deleteSession(input: DeleteSession!): String @CheckUserIdExists
+  createSession(input: NewSession!): Session!
+  updateSession(input: UpdateSession!): String
+  deleteSession(input: DeleteSession!): String
 }

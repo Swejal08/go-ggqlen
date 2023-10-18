@@ -72,6 +72,50 @@ func GetCategory(categoryId string) (*model.Category, error) {
 
 }
 
+func GetCategoriesByEvent(eventId string) ([]*model.Category, error) {
+	database := initializer.GetDB()
+
+	queryBuilder := initializer.GetQueryBuilder()
+
+	ds := queryBuilder.Select(
+		goqu.I("category.id").As("category_id"), "category_name").
+		From("category").InnerJoin(goqu.T("expense"), goqu.On(goqu.Ex{"category.id": goqu.I("expense.category_id")})).Where(goqu.Ex{"expense.event_id": eventId})
+
+	sql, _, err := ds.ToSQL()
+	if err != nil {
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
+	}
+
+	rows, err := database.Query(sql)
+
+	if err != nil {
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
+	}
+
+	defer rows.Close()
+
+	var categories []*model.Category
+
+	for rows.Next() {
+		category := &model.Category{}
+		if err := rows.Scan(&category.ID, &category.CategoryName); err != nil {
+
+			return nil, fmt.Errorf("An error occurred while scanning rows", err.Error())
+		}
+
+		categories = append(categories, category)
+
+	}
+
+	if err := rows.Err(); err != nil {
+
+		return nil, fmt.Errorf("An error occurred after iterating through rows", err.Error())
+	}
+
+	return categories, nil
+}
+
 func UpdateCategory(body model.UpdateCategory) error {
 	database := initializer.GetDB()
 

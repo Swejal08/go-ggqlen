@@ -1,6 +1,7 @@
 package services
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/Swejal08/go-ggqlen/graph/model"
@@ -38,4 +39,83 @@ func CreateUser(body model.NewUser) (*model.User, error) {
 	}
 
 	return newEvent, nil
+}
+
+func GetUserDetailsForEvent(memberId string, eventId string) (*model.UserDetails, error) {
+	database := initializer.GetDB()
+
+	queryBuilder := initializer.GetQueryBuilder()
+
+	sqlQuery, _, err := queryBuilder.Select(goqu.I("user.id").As("id"), "name", "email", "phone", "role").
+		From("user").
+		InnerJoin(goqu.T("event_membership"), goqu.On(goqu.Ex{"user.id": goqu.I("event_membership.user_id")})).
+		Where(
+			goqu.And(
+				goqu.Ex{"event_membership.event_id": eventId},
+				goqu.Ex{"user.id": memberId},
+			),
+		).ToSQL()
+
+	if err != nil {
+		return nil, fmt.Errorf("An error occurred while generating the SQL: ", err.Error())
+	}
+
+	row := database.QueryRow(sqlQuery)
+
+	userDetail := &model.UserDetails{}
+
+	if err := row.Scan(&userDetail.ID, &userDetail.Name, &userDetail.Email, &userDetail.Phone, &userDetail.Role); err == nil {
+
+		return userDetail, nil
+	} else if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("User does not have membership: ", err.Error())
+	} else {
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+	}
+}
+
+func GetNonEventMembers(eventId string) ([]*model.User, error) {
+	database := initializer.GetDB()
+
+	var sql string
+
+	sql = `
+    SELECT u.id AS user_id, u.name, u.email, u.phone
+    FROM "user" u
+    LEFT JOIN event_membership em ON em.user_id = u.id
+    WHERE u.id NOT IN (
+        SELECT em."user_id"
+        FROM event_membership em
+        WHERE em.event_id = $1
+    ) AND em.event_id IS NULL
+`
+
+	rows, err := database.Query(sql, eventId)
+
+	if err != nil {
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
+	}
+
+	defer rows.Close()
+
+	var users []*model.User
+
+	for rows.Next() {
+		user := &model.User{}
+		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Phone); err != nil {
+
+			return nil, fmt.Errorf("An error occurred while scanning rows", err.Error())
+		}
+
+		users = append(users, user)
+
+	}
+
+	if err := rows.Err(); err != nil {
+
+		return nil, fmt.Errorf("An error occurred after iterating through rows", err.Error())
+	}
+
+	return users, nil
 }

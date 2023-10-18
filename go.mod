@@ -5,6 +5,7 @@ go 1.21.3
 require (
 	github.com/99designs/gqlgen v0.17.39
 	github.com/doug-martin/goqu/v9 v9.18.0
+	github.com/go-chi/cors v1.2.1
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9

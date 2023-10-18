@@ -23,15 +23,17 @@ type TotalExpense {
 }
 
 input NewExpense {
+  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
   itemName: String! @goTag(key: "validate", value: "required")
-  cost: Int! @goTag(key: "validate", value: "required,int")
+  cost: Int! @goTag(key: "validate", value: "required")
   description: String
   categoryId: ID! @goTag(key: "validate", value: "required")
 }
 
 input UpdateExpense {
   id: ID! @goTag(key: "validate", value: "required")
+  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
   itemName: String
   cost: Int @goTag(key: "validate", value: "int")
@@ -41,15 +43,16 @@ input UpdateExpense {
 
 input DeleteExpense {
   id: ID! @goTag(key: "validate", value: "required")
+  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
 }
 
 extend type Query {
-  totalExpense(eventId: ID!): TotalExpense @CheckUserIdExists
+  totalExpense(userId: ID!, eventId: ID!): TotalExpense
 }
 
 extend type Mutation {
-  createExpense(input: NewExpense!): Expense! @CheckUserIdExists
-  updateExpense(input: UpdateExpense!): String @CheckUserIdExists
-  deleteExpense(input: DeleteExpense!): String @CheckUserIdExists
+  createExpense(input: NewExpense!): Expense!
+  updateExpense(input: UpdateExpense!): String
+  deleteExpense(input: DeleteExpense!): String
 }

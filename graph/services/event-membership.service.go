@@ -103,3 +103,54 @@ func RemoveEventMembership(input model.RemoveEventMembership) error {
 	return nil
 
 }
+
+func GetEventMembersDetails(eventId string, userId string) ([]*model.EventMembersDetail, error) {
+	database := initializer.GetDB()
+
+	queryBuilder := initializer.GetQueryBuilder()
+
+	sqlQuery, _, err := queryBuilder.Select(goqu.I("event_membership.id").As("event_membership_id"), "role", goqu.I("user.id").As("user_id"), "name", "email", "phone").From("event_membership").
+		InnerJoin(goqu.T("user"), goqu.On(goqu.Ex{"event_membership.user_id": goqu.I("user.id")})).
+		Where(goqu.Ex{"event_membership.event_id": eventId}).ToSQL()
+
+	if err != nil {
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
+	}
+
+	rows, err := database.Query(sqlQuery)
+
+	if err != nil {
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
+	}
+
+	defer rows.Close()
+
+	var memberDetails []*model.EventMembersDetail
+
+	for rows.Next() {
+		eventMembers := &model.EventMembership{}
+		user := &model.User{}
+
+		if err := rows.Scan(&eventMembers.ID, &eventMembers.Role, &user.ID, &user.Name, &user.Email, &user.Phone); err != nil {
+
+			return nil, fmt.Errorf("An error occurred while scanning rows", err.Error())
+		}
+
+		members := &model.EventMembersDetail{
+			ID:   eventMembers.ID,
+			Role: eventMembers.Role,
+			User: user,
+		}
+
+		memberDetails = append(memberDetails, members)
+
+		if err := rows.Err(); err != nil {
+
+			return nil, fmt.Errorf("An error occurred after iterating through rows", err.Error())
+		}
+	}
+
+	return memberDetails, nil
+
+}

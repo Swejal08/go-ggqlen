@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	accessControl "github.com/Swejal08/go-ggqlen/access-control"
+	"github.com/Swejal08/go-ggqlen/enums"
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/graph/services"
 	"github.com/Swejal08/go-ggqlen/utils"
@@ -25,4 +27,42 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	}
 
 	return user, nil
+}
+
+// NonEventMembers is the resolver for the nonEventMembers field.
+func (r *queryResolver) NonEventMembers(ctx context.Context, userID string, eventID string) ([]*model.User, error) {
+	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
+
+	accessError := accessControl.Check(allowedRoles, userID, eventID)
+
+	if accessError != nil {
+		return nil, accessError
+	}
+
+	users, err := services.GetNonEventMembers(eventID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// UserDetails is the resolver for the userDetails field.
+func (r *queryResolver) UserDetails(ctx context.Context, userID string, memberID string, eventID string) (*model.UserDetails, error) {
+	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
+
+	accessError := accessControl.Check(allowedRoles, userID, eventID)
+
+	if accessError != nil {
+		return nil, accessError
+	}
+
+	userDetails, err := services.GetUserDetailsForEvent(memberID, eventID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return userDetails, nil
 }
