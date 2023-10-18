@@ -43,6 +43,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	Authenticate      func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 	CheckUserIdExists func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
@@ -95,6 +96,12 @@ type ComplexityRoot struct {
 		ItemName    func(childComplexity int) int
 	}
 
+	Login struct {
+		AccessToken func(childComplexity int) int
+		Email       func(childComplexity int) int
+		ID          func(childComplexity int) int
+	}
+
 	Mutation struct {
 		AssignEventMembership func(childComplexity int, input model.AssignEventMembership) int
 		CreateCategory        func(childComplexity int, input model.NewCategory) int
@@ -106,6 +113,7 @@ type ComplexityRoot struct {
 		DeleteEvent           func(childComplexity int, input model.DeleteEvent) int
 		DeleteExpense         func(childComplexity int, input model.DeleteExpense) int
 		DeleteSession         func(childComplexity int, input model.DeleteSession) int
+		Login                 func(childComplexity int, input model.InputLogin) int
 		RemoveEventMembership func(childComplexity int, input model.RemoveEventMembership) int
 		UpdateCategory        func(childComplexity int, input model.UpdateCategory) int
 		UpdateEvent           func(childComplexity int, input model.UpdateEvent) int
@@ -137,10 +145,11 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Email func(childComplexity int) int
-		ID    func(childComplexity int) int
-		Name  func(childComplexity int) int
-		Phone func(childComplexity int) int
+		Email    func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Password func(childComplexity int) int
+		Phone    func(childComplexity int) int
 	}
 
 	UserDetails struct {
@@ -156,6 +165,7 @@ type MutationResolver interface {
 	CreateEvent(ctx context.Context, input model.NewEvent) (*model.Event, error)
 	UpdateEvent(ctx context.Context, input model.UpdateEvent) (*string, error)
 	DeleteEvent(ctx context.Context, input model.DeleteEvent) (*string, error)
+	Login(ctx context.Context, input model.InputLogin) (*model.Login, error)
 	CreateCategory(ctx context.Context, input model.NewCategory) (*model.Category, error)
 	UpdateCategory(ctx context.Context, input model.UpdateCategory) (*string, error)
 	DeleteCategory(ctx context.Context, input model.DeleteCategory) (*string, error)
@@ -387,6 +397,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Expense.ItemName(childComplexity), true
 
+	case "Login.accessToken":
+		if e.complexity.Login.AccessToken == nil {
+			break
+		}
+
+		return e.complexity.Login.AccessToken(childComplexity), true
+
+	case "Login.email":
+		if e.complexity.Login.Email == nil {
+			break
+		}
+
+		return e.complexity.Login.Email(childComplexity), true
+
+	case "Login.id":
+		if e.complexity.Login.ID == nil {
+			break
+		}
+
+		return e.complexity.Login.ID(childComplexity), true
+
 	case "Mutation.assignEventMembership":
 		if e.complexity.Mutation.AssignEventMembership == nil {
 			break
@@ -506,6 +537,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteSession(childComplexity, args["input"].(model.DeleteSession)), true
+
+	case "Mutation.login":
+		if e.complexity.Mutation.Login == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_login_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Login(childComplexity, args["input"].(model.InputLogin)), true
 
 	case "Mutation.removeEventMembership":
 		if e.complexity.Mutation.RemoveEventMembership == nil {
@@ -721,6 +764,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Name(childComplexity), true
 
+	case "User.password":
+		if e.complexity.User.Password == nil {
+			break
+		}
+
+		return e.complexity.User.Password(childComplexity), true
+
 	case "User.phone":
 		if e.complexity.User.Phone == nil {
 			break
@@ -776,6 +826,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputDeleteEvent,
 		ec.unmarshalInputDeleteExpense,
 		ec.unmarshalInputDeleteSession,
+		ec.unmarshalInputInputLogin,
 		ec.unmarshalInputNewCategory,
 		ec.unmarshalInputNewEvent,
 		ec.unmarshalInputNewExpense,
@@ -883,6 +934,23 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	{Name: "../schemas/auth.graphql", Input: `#import "directive.graphql"
+
+type Login {
+  id: ID!
+  email: String!
+  accessToken: String!
+}
+
+input InputLogin {
+  email: String! @goTag(key: "validate", value: "required")
+  password: String! @goTag(key: "validate", value: "required")
+}
+
+extend type Mutation {
+  login(input: InputLogin!): Login
+}
+`, BuiltIn: false},
 	{Name: "../schemas/category.graphql", Input: `#import "directive.graphql"
 
 type Category {
@@ -925,6 +993,8 @@ directive @goTag(
   key: String!
   value: String
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+directive @Authenticate on FIELD_DEFINITION
 `, BuiltIn: false},
 	{Name: "../schemas/event.graphql", Input: `#import "directive.graphql"
 #import "sessions.graphql"
@@ -970,7 +1040,7 @@ type Query {
 }
 
 type Mutation {
-  createEvent(input: NewEvent!): Event!
+  createEvent(input: NewEvent!): Event! @Authenticate
   updateEvent(input: UpdateEvent!): String
   deleteEvent(input: DeleteEvent!): String
 }
@@ -1121,6 +1191,7 @@ type User {
   name: String!
   email: String!
   phone: String
+  password: String
 }
 
 type UserDetails {
@@ -1135,6 +1206,7 @@ input NewUser {
   name: String! @goTag(key: "validate", value: "required")
   email: String! @goTag(key: "validate", value: "required,email")
   phone: String
+  password: String!
 }
 
 # Note that userId is Id of loggedIn user and memberId is the id of the user of which we want the details
@@ -1297,6 +1369,21 @@ func (ec *executionContext) field_Mutation_deleteSession_args(ctx context.Contex
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNDeleteSession2githubᚗcomᚋSwejal08ᚋgoᚑggqlenᚋgraphᚋmodelᚐDeleteSession(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.InputLogin
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNInputLogin2githubᚗcomᚋSwejal08ᚋgoᚑggqlenᚋgraphᚋmodelᚐInputLogin(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2359,6 +2446,8 @@ func (ec *executionContext) fieldContext_EventMembersDetail_user(ctx context.Con
 				return ec.fieldContext_User_email(ctx, field)
 			case "phone":
 				return ec.fieldContext_User_phone(ctx, field)
+			case "password":
+				return ec.fieldContext_User_password(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -2803,6 +2892,138 @@ func (ec *executionContext) fieldContext_Expense_categoryId(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Login_id(ctx context.Context, field graphql.CollectedField, obj *model.Login) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Login_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Login_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Login",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Login_email(ctx context.Context, field graphql.CollectedField, obj *model.Login) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Login_email(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Email, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Login_email(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Login",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Login_accessToken(ctx context.Context, field graphql.CollectedField, obj *model.Login) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Login_accessToken(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AccessToken, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Login_accessToken(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Login",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createEvent(ctx, field)
 	if err != nil {
@@ -2816,8 +3037,28 @@ func (ec *executionContext) _Mutation_createEvent(ctx context.Context, field gra
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateEvent(rctx, fc.Args["input"].(model.NewEvent))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateEvent(rctx, fc.Args["input"].(model.NewEvent))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.Event); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.Event`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2966,6 +3207,66 @@ func (ec *executionContext) fieldContext_Mutation_deleteEvent(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteEvent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_login(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Login(rctx, fc.Args["input"].(model.InputLogin))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Login)
+	fc.Result = res
+	return ec.marshalOLogin2ᚖgithubᚗcomᚋSwejal08ᚋgoᚑggqlenᚋgraphᚋmodelᚐLogin(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Login_id(ctx, field)
+			case "email":
+				return ec.fieldContext_Login_email(ctx, field)
+			case "accessToken":
+				return ec.fieldContext_Login_accessToken(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Login", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_login_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3630,6 +3931,8 @@ func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context
 				return ec.fieldContext_User_email(ctx, field)
 			case "phone":
 				return ec.fieldContext_User_phone(ctx, field)
+			case "password":
+				return ec.fieldContext_User_password(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -4008,6 +4311,8 @@ func (ec *executionContext) fieldContext_Query_nonEventMembers(ctx context.Conte
 				return ec.fieldContext_User_email(ctx, field)
 			case "phone":
 				return ec.fieldContext_User_phone(ctx, field)
+			case "password":
+				return ec.fieldContext_User_password(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -4699,6 +5004,47 @@ func (ec *executionContext) _User_phone(ctx context.Context, field graphql.Colle
 }
 
 func (ec *executionContext) fieldContext_User_phone(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_password(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_password(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Password, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_password(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
@@ -6939,6 +7285,44 @@ func (ec *executionContext) unmarshalInputDeleteSession(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputInputLogin(ctx context.Context, obj interface{}) (model.InputLogin, error) {
+	var it model.InputLogin
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"email", "password"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "email":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		case "password":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Password = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewCategory(ctx context.Context, obj interface{}) (model.NewCategory, error) {
 	var it model.NewCategory
 	asMap := map[string]interface{}{}
@@ -7179,7 +7563,7 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj inter
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "email", "phone"}
+	fieldsInOrder := [...]string{"name", "email", "phone", "password"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7213,6 +7597,15 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj inter
 				return it, err
 			}
 			it.Phone = data
+		case "password":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Password = data
 		}
 	}
 
@@ -7901,6 +8294,55 @@ func (ec *executionContext) _Expense(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var loginImplementors = []string{"Login"}
+
+func (ec *executionContext) _Login(ctx context.Context, sel ast.SelectionSet, obj *model.Login) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, loginImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Login")
+		case "id":
+			out.Values[i] = ec._Login_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "email":
+			out.Values[i] = ec._Login_email(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "accessToken":
+			out.Values[i] = ec._Login_accessToken(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -7934,6 +8376,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteEvent":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteEvent(ctx, field)
+			})
+		case "login":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_login(ctx, field)
 			})
 		case "createCategory":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -8347,6 +8793,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "phone":
 			out.Values[i] = ec._User_phone(ctx, field, obj)
+		case "password":
+			out.Values[i] = ec._User_password(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9016,6 +9464,11 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNInputLogin2githubᚗcomᚋSwejal08ᚋgoᚑggqlenᚋgraphᚋmodelᚐInputLogin(ctx context.Context, v interface{}) (model.InputLogin, error) {
+	res, err := ec.unmarshalInputInputLogin(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -9560,6 +10013,13 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	}
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOLogin2ᚖgithubᚗcomᚋSwejal08ᚋgoᚑggqlenᚋgraphᚋmodelᚐLogin(ctx context.Context, sel ast.SelectionSet, v *model.Login) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Login(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

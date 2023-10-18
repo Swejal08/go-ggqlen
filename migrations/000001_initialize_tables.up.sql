@@ -9,6 +9,7 @@ CREATE TABLE "user" (
   "name" varchar NOT NULL,
   "email" varchar NOT NULL,
   "phone" varchar NOT NULL,
+  "password" varchar NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT (now())
 );
@@ -25,6 +26,7 @@ CREATE TABLE "event" (
 CREATE TABLE "sessions" (
   "id" uuid PRIMARY KEY,
   "event_id" uuid NOT NULL,
+  "name" varchar NOT NULL,
   "start_date" timestamptz NOT NULL,
   "end_date" timestamptz NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
