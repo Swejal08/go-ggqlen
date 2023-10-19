@@ -122,19 +122,21 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		EventDetails    func(childComplexity int, userID string, eventID string) int
-		EventMembers    func(childComplexity int, userID string, eventID string) int
-		Events          func(childComplexity int, userID string) int
-		GetCategories   func(childComplexity int, userID string, eventID string) int
-		NonEventMembers func(childComplexity int, userID string, eventID string) int
-		TotalExpense    func(childComplexity int, userID string, eventID string) int
-		UserDetails     func(childComplexity int, userID string, memberID string, eventID string) int
+		EventDetails    func(childComplexity int, eventID string) int
+		EventMembers    func(childComplexity int, eventID string) int
+		Events          func(childComplexity int) int
+		GetCategories   func(childComplexity int) int
+		Me              func(childComplexity int) int
+		NonEventMembers func(childComplexity int, eventID string) int
+		TotalExpense    func(childComplexity int, eventID string) int
+		UserDetails     func(childComplexity int, userID string, eventID string) int
 	}
 
 	Session struct {
 		EndDate   func(childComplexity int) int
 		EventID   func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Name      func(childComplexity int) int
 		StartDate func(childComplexity int) int
 	}
 
@@ -180,13 +182,14 @@ type MutationResolver interface {
 	CreateUser(ctx context.Context, input model.NewUser) (*model.User, error)
 }
 type QueryResolver interface {
-	Events(ctx context.Context, userID string) ([]*model.Event, error)
-	EventDetails(ctx context.Context, userID string, eventID string) (*model.EventDetails, error)
-	GetCategories(ctx context.Context, userID string, eventID string) ([]*model.Category, error)
-	EventMembers(ctx context.Context, userID string, eventID string) ([]*model.EventMembersDetail, error)
-	TotalExpense(ctx context.Context, userID string, eventID string) (*model.TotalExpense, error)
-	NonEventMembers(ctx context.Context, userID string, eventID string) ([]*model.User, error)
-	UserDetails(ctx context.Context, userID string, memberID string, eventID string) (*model.UserDetails, error)
+	Events(ctx context.Context) ([]*model.Event, error)
+	EventDetails(ctx context.Context, eventID string) (*model.EventDetails, error)
+	GetCategories(ctx context.Context) ([]*model.Category, error)
+	EventMembers(ctx context.Context, eventID string) ([]*model.EventMembersDetail, error)
+	TotalExpense(ctx context.Context, eventID string) (*model.TotalExpense, error)
+	Me(ctx context.Context) (*model.User, error)
+	NonEventMembers(ctx context.Context, eventID string) ([]*model.User, error)
+	UserDetails(ctx context.Context, userID string, eventID string) (*model.UserDetails, error)
 }
 
 type executableSchema struct {
@@ -620,7 +623,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.EventDetails(childComplexity, args["userId"].(string), args["eventId"].(string)), true
+		return e.complexity.Query.EventDetails(childComplexity, args["eventId"].(string)), true
 
 	case "Query.eventMembers":
 		if e.complexity.Query.EventMembers == nil {
@@ -632,31 +635,28 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.EventMembers(childComplexity, args["userId"].(string), args["eventId"].(string)), true
+		return e.complexity.Query.EventMembers(childComplexity, args["eventId"].(string)), true
 
 	case "Query.events":
 		if e.complexity.Query.Events == nil {
 			break
 		}
 
-		args, err := ec.field_Query_events_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Events(childComplexity, args["userId"].(string)), true
+		return e.complexity.Query.Events(childComplexity), true
 
 	case "Query.getCategories":
 		if e.complexity.Query.GetCategories == nil {
 			break
 		}
 
-		args, err := ec.field_Query_getCategories_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
+		return e.complexity.Query.GetCategories(childComplexity), true
+
+	case "Query.me":
+		if e.complexity.Query.Me == nil {
+			break
 		}
 
-		return e.complexity.Query.GetCategories(childComplexity, args["userId"].(string), args["eventId"].(string)), true
+		return e.complexity.Query.Me(childComplexity), true
 
 	case "Query.nonEventMembers":
 		if e.complexity.Query.NonEventMembers == nil {
@@ -668,7 +668,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.NonEventMembers(childComplexity, args["userId"].(string), args["eventId"].(string)), true
+		return e.complexity.Query.NonEventMembers(childComplexity, args["eventId"].(string)), true
 
 	case "Query.totalExpense":
 		if e.complexity.Query.TotalExpense == nil {
@@ -680,7 +680,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TotalExpense(childComplexity, args["userId"].(string), args["eventId"].(string)), true
+		return e.complexity.Query.TotalExpense(childComplexity, args["eventId"].(string)), true
 
 	case "Query.userDetails":
 		if e.complexity.Query.UserDetails == nil {
@@ -692,7 +692,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.UserDetails(childComplexity, args["userId"].(string), args["memberId"].(string), args["eventId"].(string)), true
+		return e.complexity.Query.UserDetails(childComplexity, args["userId"].(string), args["eventId"].(string)), true
 
 	case "Session.endDate":
 		if e.complexity.Session.EndDate == nil {
@@ -714,6 +714,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Session.ID(childComplexity), true
+
+	case "Session.name":
+		if e.complexity.Session.Name == nil {
+			break
+		}
+
+		return e.complexity.Session.Name(childComplexity), true
 
 	case "Session.startDate":
 		if e.complexity.Session.StartDate == nil {
@@ -959,32 +966,29 @@ type Category {
 }
 
 input NewCategory {
-  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
   categoryName: String! @goTag(key: "validate", value: "required")
 }
 
 input UpdateCategory {
   id: ID! @goTag(key: "validate", value: "required")
-  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
   categoryName: String @goTag(key: "validate", value: "required")
 }
 
 input DeleteCategory {
-  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
   id: ID! @goTag(key: "validate", value: "required")
 }
 
 extend type Query {
-  getCategories(userId: ID!, eventId: ID!): [Category!]!
+  getCategories: [Category!]! @Authenticate
 }
 
 extend type Mutation {
-  createCategory(input: NewCategory!): Category!
-  updateCategory(input: UpdateCategory!): String
-  deleteCategory(input: DeleteCategory!): String
+  createCategory(input: NewCategory!): Category! @Authenticate
+  updateCategory(input: UpdateCategory!): String @Authenticate
+  deleteCategory(input: DeleteCategory!): String @Authenticate
 }
 `, BuiltIn: false},
 	{Name: "../schemas/directive.graphql", Input: `directive @CheckUserIdExists on FIELD_DEFINITION
@@ -1015,14 +1019,12 @@ type EventDetails {
 }
 
 input NewEvent {
-  userId: ID! @goTag(key: "validate", value: "required")
   name: String! @goTag(key: "validate", value: "required")
   description: String! @goTag(key: "validate", value: "required")
   location: String! @goTag(key: "validate", value: "required")
 }
 
 input UpdateEvent {
-  userId: ID! @goTag(key: "validate", value: "required")
   id: ID! @goTag(key: "validate", value: "required")
   name: String
   description: String
@@ -1030,19 +1032,18 @@ input UpdateEvent {
 }
 
 input DeleteEvent {
-  userId: ID! @goTag(key: "validate", value: "required")
   id: ID! @goTag(key: "validate", value: "required")
 }
 
 type Query {
-  events(userId: ID!): [Event!]!
-  eventDetails(userId: ID!, eventId: ID!): EventDetails
+  events: [Event!]! @Authenticate
+  eventDetails(eventId: ID!): EventDetails @Authenticate
 }
 
 type Mutation {
   createEvent(input: NewEvent!): Event! @Authenticate
-  updateEvent(input: UpdateEvent!): String
-  deleteEvent(input: DeleteEvent!): String
+  updateEvent(input: UpdateEvent!): String @Authenticate
+  deleteEvent(input: DeleteEvent!): String @Authenticate
 }
 `, BuiltIn: false},
 	{Name: "../schemas/eventMembership.graphql", Input: `#import "event.graphql"
@@ -1070,9 +1071,8 @@ type EventMembersDetail {
 }
 
 input AssignEventMembership {
-  userId: ID!
   eventId: ID! @goTag(key: "validate", value: "required")
-  memberId: ID! @goTag(key: "validate", value: "required")
+  userId: ID! @goTag(key: "validate", value: "required")
   role: Role! @goTag(key: "validate", value: "required")
 }
 
@@ -1082,12 +1082,12 @@ input RemoveEventMembership {
 }
 
 extend type Query {
-  eventMembers(userId: ID!, eventId: ID!): [EventMembersDetail]!
+  eventMembers(eventId: ID!): [EventMembersDetail]! @Authenticate
 }
 
 extend type Mutation {
-  assignEventMembership(input: AssignEventMembership!): String
-  removeEventMembership(input: RemoveEventMembership!): String
+  assignEventMembership(input: AssignEventMembership!): String @Authenticate
+  removeEventMembership(input: RemoveEventMembership!): String @Authenticate
 }
 `, BuiltIn: false},
 	{Name: "../schemas/expense.graphql", Input: `#import "event.graphql"
@@ -1115,7 +1115,6 @@ type TotalExpense {
 }
 
 input NewExpense {
-  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
   itemName: String! @goTag(key: "validate", value: "required")
   cost: Int! @goTag(key: "validate", value: "required")
@@ -1125,7 +1124,6 @@ input NewExpense {
 
 input UpdateExpense {
   id: ID! @goTag(key: "validate", value: "required")
-  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
   itemName: String
   cost: Int @goTag(key: "validate", value: "int")
@@ -1135,52 +1133,51 @@ input UpdateExpense {
 
 input DeleteExpense {
   id: ID! @goTag(key: "validate", value: "required")
-  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
 }
 
 extend type Query {
-  totalExpense(userId: ID!, eventId: ID!): TotalExpense
+  totalExpense(eventId: ID!): TotalExpense @Authenticate
 }
 
 extend type Mutation {
-  createExpense(input: NewExpense!): Expense!
-  updateExpense(input: UpdateExpense!): String
-  deleteExpense(input: DeleteExpense!): String
+  createExpense(input: NewExpense!): Expense! @Authenticate
+  updateExpense(input: UpdateExpense!): String @Authenticate
+  deleteExpense(input: DeleteExpense!): String @Authenticate
 }
 `, BuiltIn: false},
 	{Name: "../schemas/sessions.graphql", Input: `type Session {
   id: ID!
   eventId: ID!
+  name: String!
   startDate: String!
   endDate: String!
 }
 
 input NewSession {
-  userId: ID!
   eventId: ID!
+  name: String!
   startDate: String!
   endDate: String!
 }
 
 input UpdateSession {
   id: ID!
-  userId: ID!
   eventId: ID!
+  name: String
   startDate: String
   endDate: String
 }
 
 input DeleteSession {
   id: ID!
-  userId: ID!
   eventId: ID!
 }
 
 extend type Mutation {
-  createSession(input: NewSession!): Session!
-  updateSession(input: UpdateSession!): String
-  deleteSession(input: DeleteSession!): String
+  createSession(input: NewSession!): Session! @Authenticate
+  updateSession(input: UpdateSession!): String @Authenticate
+  deleteSession(input: DeleteSession!): String @Authenticate
 }
 `, BuiltIn: false},
 	{Name: "../schemas/user.graphql", Input: `#import "directive.graphql"
@@ -1209,15 +1206,14 @@ input NewUser {
   password: String!
 }
 
-# Note that userId is Id of loggedIn user and memberId is the id of the user of which we want the details
-
 extend type Query {
-  nonEventMembers(userId: ID!, eventId: ID!): [User]!
-  userDetails(userId: ID!, memberId: ID!, eventId: ID!): UserDetails!
+  me: User @Authenticate @Authenticate
+  nonEventMembers(eventId: ID!): [User]! @Authenticate
+  userDetails(userId: ID!, eventId: ID!): UserDetails! @Authenticate
 }
 
 extend type Mutation {
-  createUser(input: NewUser!): User!
+  createUser(input: NewUser!): User! @Authenticate
 }
 `, BuiltIn: false},
 }
@@ -1486,23 +1482,14 @@ func (ec *executionContext) field_Query_eventDetails_args(ctx context.Context, r
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["userId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+	if tmp, ok := rawArgs["eventId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["userId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["eventId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["eventId"] = arg1
+	args["eventId"] = arg0
 	return args, nil
 }
 
@@ -1510,62 +1497,14 @@ func (ec *executionContext) field_Query_eventMembers_args(ctx context.Context, r
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["userId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["userId"] = arg0
-	var arg1 string
 	if tmp, ok := rawArgs["eventId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["eventId"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_events_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["userId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["userId"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getCategories_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["userId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["userId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["eventId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["eventId"] = arg1
+	args["eventId"] = arg0
 	return args, nil
 }
 
@@ -1573,23 +1512,14 @@ func (ec *executionContext) field_Query_nonEventMembers_args(ctx context.Context
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["userId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+	if tmp, ok := rawArgs["eventId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["userId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["eventId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["eventId"] = arg1
+	args["eventId"] = arg0
 	return args, nil
 }
 
@@ -1597,23 +1527,14 @@ func (ec *executionContext) field_Query_totalExpense_args(ctx context.Context, r
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["userId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+	if tmp, ok := rawArgs["eventId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["userId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["eventId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["eventId"] = arg1
+	args["eventId"] = arg0
 	return args, nil
 }
 
@@ -1630,23 +1551,14 @@ func (ec *executionContext) field_Query_userDetails_args(ctx context.Context, ra
 	}
 	args["userId"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["memberId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("memberId"))
+	if tmp, ok := rawArgs["eventId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
 		arg1, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["memberId"] = arg1
-	var arg2 string
-	if tmp, ok := rawArgs["eventId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
-		arg2, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["eventId"] = arg2
+	args["eventId"] = arg1
 	return args, nil
 }
 
@@ -2303,6 +2215,8 @@ func (ec *executionContext) fieldContext_EventDetails_sessions(ctx context.Conte
 				return ec.fieldContext_Session_id(ctx, field)
 			case "eventId":
 				return ec.fieldContext_Session_eventId(ctx, field)
+			case "name":
+				return ec.fieldContext_Session_name(ctx, field)
 			case "startDate":
 				return ec.fieldContext_Session_startDate(ctx, field)
 			case "endDate":
@@ -3122,8 +3036,28 @@ func (ec *executionContext) _Mutation_updateEvent(ctx context.Context, field gra
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateEvent(rctx, fc.Args["input"].(model.UpdateEvent))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateEvent(rctx, fc.Args["input"].(model.UpdateEvent))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3174,8 +3108,28 @@ func (ec *executionContext) _Mutation_deleteEvent(ctx context.Context, field gra
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteEvent(rctx, fc.Args["input"].(model.DeleteEvent))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteEvent(rctx, fc.Args["input"].(model.DeleteEvent))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3286,8 +3240,28 @@ func (ec *executionContext) _Mutation_createCategory(ctx context.Context, field 
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateCategory(rctx, fc.Args["input"].(model.NewCategory))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateCategory(rctx, fc.Args["input"].(model.NewCategory))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.Category); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.Category`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3347,8 +3321,28 @@ func (ec *executionContext) _Mutation_updateCategory(ctx context.Context, field 
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateCategory(rctx, fc.Args["input"].(model.UpdateCategory))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateCategory(rctx, fc.Args["input"].(model.UpdateCategory))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3399,8 +3393,28 @@ func (ec *executionContext) _Mutation_deleteCategory(ctx context.Context, field 
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteCategory(rctx, fc.Args["input"].(model.DeleteCategory))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteCategory(rctx, fc.Args["input"].(model.DeleteCategory))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3451,8 +3465,28 @@ func (ec *executionContext) _Mutation_assignEventMembership(ctx context.Context,
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AssignEventMembership(rctx, fc.Args["input"].(model.AssignEventMembership))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().AssignEventMembership(rctx, fc.Args["input"].(model.AssignEventMembership))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3503,8 +3537,28 @@ func (ec *executionContext) _Mutation_removeEventMembership(ctx context.Context,
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RemoveEventMembership(rctx, fc.Args["input"].(model.RemoveEventMembership))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().RemoveEventMembership(rctx, fc.Args["input"].(model.RemoveEventMembership))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3555,8 +3609,28 @@ func (ec *executionContext) _Mutation_createExpense(ctx context.Context, field g
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateExpense(rctx, fc.Args["input"].(model.NewExpense))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateExpense(rctx, fc.Args["input"].(model.NewExpense))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.Expense); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.Expense`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3624,8 +3698,28 @@ func (ec *executionContext) _Mutation_updateExpense(ctx context.Context, field g
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateExpense(rctx, fc.Args["input"].(model.UpdateExpense))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateExpense(rctx, fc.Args["input"].(model.UpdateExpense))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3676,8 +3770,28 @@ func (ec *executionContext) _Mutation_deleteExpense(ctx context.Context, field g
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteExpense(rctx, fc.Args["input"].(model.DeleteExpense))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteExpense(rctx, fc.Args["input"].(model.DeleteExpense))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3728,8 +3842,28 @@ func (ec *executionContext) _Mutation_createSession(ctx context.Context, field g
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateSession(rctx, fc.Args["input"].(model.NewSession))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateSession(rctx, fc.Args["input"].(model.NewSession))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.Session); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.Session`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3758,6 +3892,8 @@ func (ec *executionContext) fieldContext_Mutation_createSession(ctx context.Cont
 				return ec.fieldContext_Session_id(ctx, field)
 			case "eventId":
 				return ec.fieldContext_Session_eventId(ctx, field)
+			case "name":
+				return ec.fieldContext_Session_name(ctx, field)
 			case "startDate":
 				return ec.fieldContext_Session_startDate(ctx, field)
 			case "endDate":
@@ -3793,8 +3929,28 @@ func (ec *executionContext) _Mutation_updateSession(ctx context.Context, field g
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateSession(rctx, fc.Args["input"].(model.UpdateSession))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateSession(rctx, fc.Args["input"].(model.UpdateSession))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3845,8 +4001,28 @@ func (ec *executionContext) _Mutation_deleteSession(ctx context.Context, field g
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteSession(rctx, fc.Args["input"].(model.DeleteSession))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteSession(rctx, fc.Args["input"].(model.DeleteSession))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3897,8 +4073,28 @@ func (ec *executionContext) _Mutation_createUser(ctx context.Context, field grap
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateUser(rctx, fc.Args["input"].(model.NewUser))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateUser(rctx, fc.Args["input"].(model.NewUser))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.User); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.User`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3964,8 +4160,28 @@ func (ec *executionContext) _Query_events(ctx context.Context, field graphql.Col
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Events(rctx, fc.Args["userId"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Events(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.Event); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/Swejal08/go-ggqlen/graph/model.Event`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4002,17 +4218,6 @@ func (ec *executionContext) fieldContext_Query_events(ctx context.Context, field
 			return nil, fmt.Errorf("no field named %q was found under type Event", field.Name)
 		},
 	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_events_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
 	return fc, nil
 }
 
@@ -4029,8 +4234,28 @@ func (ec *executionContext) _Query_eventDetails(ctx context.Context, field graph
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EventDetails(rctx, fc.Args["userId"].(string), fc.Args["eventId"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().EventDetails(rctx, fc.Args["eventId"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.EventDetails); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.EventDetails`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4093,8 +4318,28 @@ func (ec *executionContext) _Query_getCategories(ctx context.Context, field grap
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetCategories(rctx, fc.Args["userId"].(string), fc.Args["eventId"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().GetCategories(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.Category); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/Swejal08/go-ggqlen/graph/model.Category`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4127,17 +4372,6 @@ func (ec *executionContext) fieldContext_Query_getCategories(ctx context.Context
 			return nil, fmt.Errorf("no field named %q was found under type Category", field.Name)
 		},
 	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getCategories_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
 	return fc, nil
 }
 
@@ -4154,8 +4388,28 @@ func (ec *executionContext) _Query_eventMembers(ctx context.Context, field graph
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EventMembers(rctx, fc.Args["userId"].(string), fc.Args["eventId"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().EventMembers(rctx, fc.Args["eventId"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.EventMembersDetail); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/Swejal08/go-ggqlen/graph/model.EventMembersDetail`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4217,8 +4471,28 @@ func (ec *executionContext) _Query_totalExpense(ctx context.Context, field graph
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TotalExpense(rctx, fc.Args["userId"].(string), fc.Args["eventId"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().TotalExpense(rctx, fc.Args["eventId"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.TotalExpense); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.TotalExpense`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4264,6 +4538,85 @@ func (ec *executionContext) fieldContext_Query_totalExpense(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_me(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Me(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive1)
+		}
+
+		tmp, err := directive2(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.User); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.User`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖgithubᚗcomᚋSwejal08ᚋgoᚑggqlenᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_me(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
+			case "password":
+				return ec.fieldContext_User_password(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_nonEventMembers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_nonEventMembers(ctx, field)
 	if err != nil {
@@ -4277,8 +4630,28 @@ func (ec *executionContext) _Query_nonEventMembers(ctx context.Context, field gr
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().NonEventMembers(rctx, fc.Args["userId"].(string), fc.Args["eventId"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().NonEventMembers(rctx, fc.Args["eventId"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.User); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/Swejal08/go-ggqlen/graph/model.User`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4344,8 +4717,28 @@ func (ec *executionContext) _Query_userDetails(ctx context.Context, field graphq
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().UserDetails(rctx, fc.Args["userId"].(string), fc.Args["memberId"].(string), fc.Args["eventId"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().UserDetails(rctx, fc.Args["userId"].(string), fc.Args["eventId"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticate == nil {
+				return nil, errors.New("directive Authenticate is not implemented")
+			}
+			return ec.directives.Authenticate(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.UserDetails); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.UserDetails`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4610,6 +5003,50 @@ func (ec *executionContext) fieldContext_Session_eventId(ctx context.Context, fi
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Session_name(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Session_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Session_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Session",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7057,22 +7494,13 @@ func (ec *executionContext) unmarshalInputAssignEventMembership(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"userId", "eventId", "memberId", "role"}
+	fieldsInOrder := [...]string{"eventId", "userId", "role"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "eventId":
 			var err error
 
@@ -7082,15 +7510,15 @@ func (ec *executionContext) unmarshalInputAssignEventMembership(ctx context.Cont
 				return it, err
 			}
 			it.EventID = data
-		case "memberId":
+		case "userId":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("memberId"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
 			data, err := ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.MemberID = data
+			it.UserID = data
 		case "role":
 			var err error
 
@@ -7113,22 +7541,13 @@ func (ec *executionContext) unmarshalInputDeleteCategory(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"userId", "eventId", "id"}
+	fieldsInOrder := [...]string{"eventId", "id"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "eventId":
 			var err error
 
@@ -7160,22 +7579,13 @@ func (ec *executionContext) unmarshalInputDeleteEvent(ctx context.Context, obj i
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"userId", "id"}
+	fieldsInOrder := [...]string{"id"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "id":
 			var err error
 
@@ -7198,7 +7608,7 @@ func (ec *executionContext) unmarshalInputDeleteExpense(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "userId", "eventId"}
+	fieldsInOrder := [...]string{"id", "eventId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7214,15 +7624,6 @@ func (ec *executionContext) unmarshalInputDeleteExpense(ctx context.Context, obj
 				return it, err
 			}
 			it.ID = data
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "eventId":
 			var err error
 
@@ -7245,7 +7646,7 @@ func (ec *executionContext) unmarshalInputDeleteSession(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "userId", "eventId"}
+	fieldsInOrder := [...]string{"id", "eventId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7261,15 +7662,6 @@ func (ec *executionContext) unmarshalInputDeleteSession(ctx context.Context, obj
 				return it, err
 			}
 			it.ID = data
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "eventId":
 			var err error
 
@@ -7330,22 +7722,13 @@ func (ec *executionContext) unmarshalInputNewCategory(ctx context.Context, obj i
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"userId", "eventId", "categoryName"}
+	fieldsInOrder := [...]string{"eventId", "categoryName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "eventId":
 			var err error
 
@@ -7377,22 +7760,13 @@ func (ec *executionContext) unmarshalInputNewEvent(ctx context.Context, obj inte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"userId", "name", "description", "location"}
+	fieldsInOrder := [...]string{"name", "description", "location"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "name":
 			var err error
 
@@ -7433,22 +7807,13 @@ func (ec *executionContext) unmarshalInputNewExpense(ctx context.Context, obj in
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"userId", "eventId", "itemName", "cost", "description", "categoryId"}
+	fieldsInOrder := [...]string{"eventId", "itemName", "cost", "description", "categoryId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "eventId":
 			var err error
 
@@ -7507,22 +7872,13 @@ func (ec *executionContext) unmarshalInputNewSession(ctx context.Context, obj in
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"userId", "eventId", "startDate", "endDate"}
+	fieldsInOrder := [...]string{"eventId", "name", "startDate", "endDate"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "eventId":
 			var err error
 
@@ -7532,6 +7888,15 @@ func (ec *executionContext) unmarshalInputNewSession(ctx context.Context, obj in
 				return it, err
 			}
 			it.EventID = data
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
 		case "startDate":
 			var err error
 
@@ -7657,7 +8022,7 @@ func (ec *executionContext) unmarshalInputUpdateCategory(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "userId", "eventId", "categoryName"}
+	fieldsInOrder := [...]string{"id", "eventId", "categoryName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7673,15 +8038,6 @@ func (ec *executionContext) unmarshalInputUpdateCategory(ctx context.Context, ob
 				return it, err
 			}
 			it.ID = data
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "eventId":
 			var err error
 
@@ -7713,22 +8069,13 @@ func (ec *executionContext) unmarshalInputUpdateEvent(ctx context.Context, obj i
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"userId", "id", "name", "description", "location"}
+	fieldsInOrder := [...]string{"id", "name", "description", "location"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "id":
 			var err error
 
@@ -7778,7 +8125,7 @@ func (ec *executionContext) unmarshalInputUpdateExpense(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "userId", "eventId", "itemName", "cost", "description", "categoryId"}
+	fieldsInOrder := [...]string{"id", "eventId", "itemName", "cost", "description", "categoryId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7794,15 +8141,6 @@ func (ec *executionContext) unmarshalInputUpdateExpense(ctx context.Context, obj
 				return it, err
 			}
 			it.ID = data
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "eventId":
 			var err error
 
@@ -7861,7 +8199,7 @@ func (ec *executionContext) unmarshalInputUpdateSession(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "userId", "eventId", "startDate", "endDate"}
+	fieldsInOrder := [...]string{"id", "eventId", "name", "startDate", "endDate"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7877,15 +8215,6 @@ func (ec *executionContext) unmarshalInputUpdateSession(ctx context.Context, obj
 				return it, err
 			}
 			it.ID = data
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "eventId":
 			var err error
 
@@ -7895,6 +8224,15 @@ func (ec *executionContext) unmarshalInputUpdateSession(ctx context.Context, obj
 				return it, err
 			}
 			it.EventID = data
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
 		case "startDate":
 			var err error
 
@@ -8587,6 +8925,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "me":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_me(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "nonEventMembers":
 			field := field
 
@@ -8680,6 +9037,11 @@ func (ec *executionContext) _Session(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "eventId":
 			out.Values[i] = ec._Session_eventId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Session_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

@@ -13,6 +13,7 @@ import (
 
 var sessionFieldMapper = map[string]string{
 	"EventID":   "event_id",
+	"Name":      "name",
 	"StartDate": "start_date",
 	"EndDate":   "end_date",
 }
@@ -25,8 +26,8 @@ func CreateSession(body model.NewSession) (*model.Session, error) {
 	newId := uuid.New()
 
 	ds := queryBuilder.Insert("sessions").
-		Cols("id", "event_id", "start_date", "end_date").
-		Vals(goqu.Vals{newId, body.EventID, body.StartDate, body.EndDate})
+		Cols("id", "event_id", "name", "start_date", "end_date").
+		Vals(goqu.Vals{newId, body.EventID, body.Name, body.StartDate, body.EndDate})
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
@@ -41,6 +42,7 @@ func CreateSession(body model.NewSession) (*model.Session, error) {
 	newSession := &model.Session{
 		ID:        newId.String(),
 		EventID:   body.EventID,
+		Name:      body.Name,
 		StartDate: body.StartDate,
 		EndDate:   body.EndDate,
 	}
@@ -53,7 +55,7 @@ func GetSession(sessionId string) (*model.Session, error) {
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	sqlQuery, _, err := queryBuilder.Select("id", "event_id", "start_date", "end_date").From("sessions").Where(goqu.Ex{"id": sessionId}).ToSQL()
+	sqlQuery, _, err := queryBuilder.Select("id", "event_id", "name", "start_date", "end_date").From("sessions").Where(goqu.Ex{"id": sessionId}).ToSQL()
 
 	if err != nil {
 		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
@@ -63,7 +65,7 @@ func GetSession(sessionId string) (*model.Session, error) {
 
 	session := &model.Session{}
 
-	if err := row.Scan(&session.ID, &session.EventID, &session.StartDate, &session.EndDate); err == nil {
+	if err := row.Scan(&session.ID, &session.EventID, &session.Name, &session.StartDate, &session.EndDate); err == nil {
 		return session, nil
 	} else if err == sql.ErrNoRows {
 
@@ -81,7 +83,7 @@ func GetSessionByEventId(eventId string) ([]*model.Session, error) {
 
 	queryBuilder := initializer.GetQueryBuilder()
 
-	sqlQuery, _, err := queryBuilder.Select("id", "event_id", "start_date", "end_date").From("sessions").Where(goqu.Ex{"event_id": eventId}).ToSQL()
+	sqlQuery, _, err := queryBuilder.Select("id", "event_id", "name", "start_date", "end_date").From("sessions").Where(goqu.Ex{"event_id": eventId}).ToSQL()
 
 	if err != nil {
 		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
@@ -100,7 +102,7 @@ func GetSessionByEventId(eventId string) ([]*model.Session, error) {
 
 	for rows.Next() {
 		session := &model.Session{}
-		if err := rows.Scan(&session.ID, &session.EventID, &session.StartDate, &session.EndDate); err != nil {
+		if err := rows.Scan(&session.ID, &session.EventID, &session.Name, &session.StartDate, &session.EndDate); err != nil {
 			return nil, fmt.Errorf("An error occurred while scanning rows", err.Error())
 
 		}

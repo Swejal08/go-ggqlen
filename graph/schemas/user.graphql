@@ -24,13 +24,12 @@ input NewUser {
   password: String!
 }
 
-# Note that userId is Id of loggedIn user and memberId is the id of the user of which we want the details
-
 extend type Query {
-  nonEventMembers(userId: ID!, eventId: ID!): [User]!
-  userDetails(userId: ID!, memberId: ID!, eventId: ID!): UserDetails!
+  me: User @Authenticate @Authenticate
+  nonEventMembers(eventId: ID!): [User]! @Authenticate
+  userDetails(userId: ID!, eventId: ID!): UserDetails! @Authenticate
 }
 
 extend type Mutation {
-  createUser(input: NewUser!): User!
+  createUser(input: NewUser!): User! @Authenticate
 }

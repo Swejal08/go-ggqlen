@@ -40,11 +40,26 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	return createdUser, nil
 }
 
+// Me is the resolver for the me field.
+func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
+	userId := ctx.Value("currentUserId").(string)
+
+	user, _ := services.GetUserById(userId)
+
+	if user.ID == "" {
+		return nil, fmt.Errorf("User not found")
+	}
+
+	return user, nil
+}
+
 // NonEventMembers is the resolver for the nonEventMembers field.
-func (r *queryResolver) NonEventMembers(ctx context.Context, userID string, eventID string) ([]*model.User, error) {
+func (r *queryResolver) NonEventMembers(ctx context.Context, eventID string) ([]*model.User, error) {
+	userId := ctx.Value("currentUserId").(string)
+
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	accessError := accessControl.Check(allowedRoles, userID, eventID)
+	accessError := accessControl.Check(allowedRoles, userId, eventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -60,16 +75,17 @@ func (r *queryResolver) NonEventMembers(ctx context.Context, userID string, even
 }
 
 // UserDetails is the resolver for the userDetails field.
-func (r *queryResolver) UserDetails(ctx context.Context, userID string, memberID string, eventID string) (*model.UserDetails, error) {
+func (r *queryResolver) UserDetails(ctx context.Context, userID string, eventID string) (*model.UserDetails, error) {
+	userId := ctx.Value("currentUserId").(string)
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	accessError := accessControl.Check(allowedRoles, userID, eventID)
+	accessError := accessControl.Check(allowedRoles, userId, eventID)
 
 	if accessError != nil {
 		return nil, accessError
 	}
 
-	userDetails, err := services.GetUserDetailsForEvent(memberID, eventID)
+	userDetails, err := services.GetUserDetailsForEvent(userID, eventID)
 
 	if err != nil {
 		return nil, err

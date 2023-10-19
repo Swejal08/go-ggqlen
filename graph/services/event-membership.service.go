@@ -104,7 +104,7 @@ func RemoveEventMembership(input model.RemoveEventMembership) error {
 
 }
 
-func GetEventMembersDetails(eventId string, userId string) ([]*model.EventMembersDetail, error) {
+func GetEventMembersDetails(eventId string) ([]*model.EventMembersDetail, error) {
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
