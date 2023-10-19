@@ -17,14 +17,12 @@ type EventDetails {
 }
 
 input NewEvent {
-  userId: ID! @goTag(key: "validate", value: "required")
   name: String! @goTag(key: "validate", value: "required")
   description: String! @goTag(key: "validate", value: "required")
   location: String! @goTag(key: "validate", value: "required")
 }
 
 input UpdateEvent {
-  userId: ID! @goTag(key: "validate", value: "required")
   id: ID! @goTag(key: "validate", value: "required")
   name: String
   description: String
@@ -32,17 +30,16 @@ input UpdateEvent {
 }
 
 input DeleteEvent {
-  userId: ID! @goTag(key: "validate", value: "required")
   id: ID! @goTag(key: "validate", value: "required")
 }
 
 type Query {
-  events(userId: ID!): [Event!]!
-  eventDetails(userId: ID!, eventId: ID!): EventDetails
+  events: [Event!]! @Authenticate
+  eventDetails(eventId: ID!): EventDetails @Authenticate
 }
 
 type Mutation {
   createEvent(input: NewEvent!): Event! @Authenticate
-  updateEvent(input: UpdateEvent!): String
-  deleteEvent(input: DeleteEvent!): String
+  updateEvent(input: UpdateEvent!): String @Authenticate
+  deleteEvent(input: DeleteEvent!): String @Authenticate
 }

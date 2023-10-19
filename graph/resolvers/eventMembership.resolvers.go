@@ -16,30 +16,32 @@ import (
 
 // AssignEventMembership is the resolver for the assignEventMembership field.
 func (r *mutationResolver) AssignEventMembership(ctx context.Context, input model.AssignEventMembership) (*string, error) {
+	userId := ctx.Value("currentUserId").(string)
+
 	var err error
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
 	}
 
-	membership, err := services.GetEventMembership(input.EventID, input.UserID)
+	membership, err := services.GetEventMembership(input.EventID, userId)
 
 	if string(membership.Role) == enums.GetRoleDescription(int(enums.Contributor)) && input.Role != model.Role(enums.GetRoleDescription(int(enums.Attendee))) {
 		return nil, fmt.Errorf("Contributor can only invite Attendees")
 	}
 
-	eventMembership, err := services.GetEventMembership(input.EventID, input.MemberID)
+	eventMembership, err := services.GetEventMembership(input.EventID, input.UserID)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if eventMembership == nil {
-		err = services.CreateEventMembership(input.EventID, input.MemberID, input.Role)
+		err = services.CreateEventMembership(input.EventID, input.UserID, input.Role)
 
 	} else {
 		err = services.UpdateEventMembership(input, eventMembership)
@@ -51,9 +53,11 @@ func (r *mutationResolver) AssignEventMembership(ctx context.Context, input mode
 
 // RemoveEventMembership is the resolver for the removeEventMembership field.
 func (r *mutationResolver) RemoveEventMembership(ctx context.Context, input model.RemoveEventMembership) (*string, error) {
+	userId := ctx.Value("currentUserId").(string)
+
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -70,16 +74,18 @@ func (r *mutationResolver) RemoveEventMembership(ctx context.Context, input mode
 }
 
 // EventMembers is the resolver for the eventMembers field.
-func (r *queryResolver) EventMembers(ctx context.Context, userID string, eventID string) ([]*model.EventMembersDetail, error) {
+func (r *queryResolver) EventMembers(ctx context.Context, eventID string) ([]*model.EventMembersDetail, error) {
+	userId := ctx.Value("currentUserId").(string)
+
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor, enums.Attendee}
 
-	accessError := accessControl.Check(allowedRoles, userID, eventID)
+	accessError := accessControl.Check(allowedRoles, userId, eventID)
 
 	if accessError != nil {
 		return nil, accessError
 	}
 
-	memberDetails, err := services.GetEventMembersDetails(eventID, userID)
+	memberDetails, err := services.GetEventMembersDetails(eventID)
 
 	if err != nil {
 		return nil, err

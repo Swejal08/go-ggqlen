@@ -23,9 +23,8 @@ type EventMembersDetail {
 }
 
 input AssignEventMembership {
-  userId: ID!
   eventId: ID! @goTag(key: "validate", value: "required")
-  memberId: ID! @goTag(key: "validate", value: "required")
+  userId: ID! @goTag(key: "validate", value: "required")
   role: Role! @goTag(key: "validate", value: "required")
 }
 
@@ -35,10 +34,10 @@ input RemoveEventMembership {
 }
 
 extend type Query {
-  eventMembers(userId: ID!, eventId: ID!): [EventMembersDetail]!
+  eventMembers(eventId: ID!): [EventMembersDetail]! @Authenticate
 }
 
 extend type Mutation {
-  assignEventMembership(input: AssignEventMembership!): String
-  removeEventMembership(input: RemoveEventMembership!): String
+  assignEventMembership(input: AssignEventMembership!): String @Authenticate
+  removeEventMembership(input: RemoveEventMembership!): String @Authenticate
 }

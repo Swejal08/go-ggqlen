@@ -10,7 +10,12 @@ import (
 
 func Authenticate() func(ctx context.Context, obj interface{}, next graphql.Resolver) (interface{}, error) {
 	return func(ctx context.Context, obj interface{}, next graphql.Resolver) (interface{}, error) {
+
 		currentUserId := ctx.Value("currentUserId")
+
+		if currentUserId == nil {
+			return nil, fmt.Errorf("Authentication Failed")
+		}
 
 		userId, ok := currentUserId.(string)
 

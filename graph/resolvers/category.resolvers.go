@@ -20,9 +20,11 @@ func (r *mutationResolver) CreateCategory(ctx context.Context, input model.NewCa
 		return nil, err
 	}
 
+	userId := ctx.Value("currentUserId").(string)
+
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -42,10 +44,11 @@ func (r *mutationResolver) UpdateCategory(ctx context.Context, input model.Updat
 	if err := utils.ValidateInput(input); err != nil {
 		return nil, err
 	}
+	userId := ctx.Value("currentUserId").(string)
 
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -69,9 +72,11 @@ func (r *mutationResolver) UpdateCategory(ctx context.Context, input model.Updat
 
 // DeleteCategory is the resolver for the deleteCategory field.
 func (r *mutationResolver) DeleteCategory(ctx context.Context, input model.DeleteCategory) (*string, error) {
+	userId := ctx.Value("currentUserId").(string)
+
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -95,16 +100,18 @@ func (r *mutationResolver) DeleteCategory(ctx context.Context, input model.Delet
 }
 
 // GetCategories is the resolver for the getCategories field.
-func (r *queryResolver) GetCategories(ctx context.Context, userID string, eventID string) ([]*model.Category, error) {
-	allowedRoles := []enums.EventMembershipRole{enums.Admin}
+func (r *queryResolver) GetCategories(ctx context.Context) ([]*model.Category, error) {
+	// userId := ctx.Value("currentUserId").(string)
 
-	accessError := accessControl.Check(allowedRoles, userID, eventID)
+	// allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	if accessError != nil {
-		return nil, accessError
-	}
+	// accessError := accessControl.Check(allowedRoles, userId, eventID)
 
-	categories, err := services.GetCategoriesByEvent(eventID)
+	// if accessError != nil {
+	// 	return nil, accessError
+	// }
+
+	categories, err := services.GetAllCategories()
 
 	if err != nil {
 		return nil, err

@@ -21,9 +21,11 @@ func (r *mutationResolver) CreateExpense(ctx context.Context, input model.NewExp
 		return nil, err
 	}
 
+	userId := ctx.Value("currentUserId").(string)
+
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -44,9 +46,11 @@ func (r *mutationResolver) UpdateExpense(ctx context.Context, input model.Update
 		return nil, err
 	}
 
+	userId := ctx.Value("currentUserId").(string)
+
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -70,9 +74,11 @@ func (r *mutationResolver) UpdateExpense(ctx context.Context, input model.Update
 
 // DeleteExpense is the resolver for the deleteExpense field.
 func (r *mutationResolver) DeleteExpense(ctx context.Context, input model.DeleteExpense) (*string, error) {
+	userId := ctx.Value("currentUserId").(string)
+
 	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	accessError := accessControl.Check(allowedRoles, input.UserID, input.EventID)
+	accessError := accessControl.Check(allowedRoles, userId, input.EventID)
 
 	if accessError != nil {
 		return nil, accessError
@@ -95,10 +101,12 @@ func (r *mutationResolver) DeleteExpense(ctx context.Context, input model.Delete
 }
 
 // TotalExpense is the resolver for the totalExpense field.
-func (r *queryResolver) TotalExpense(ctx context.Context, userID string, eventID string) (*model.TotalExpense, error) {
+func (r *queryResolver) TotalExpense(ctx context.Context, eventID string) (*model.TotalExpense, error) {
+	userId := ctx.Value("currentUserId").(string)
+
 	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
 
-	accessError := accessControl.Check(allowedRoles, userID, eventID)
+	accessError := accessControl.Check(allowedRoles, userId, eventID)
 
 	if accessError != nil {
 		return nil, accessError

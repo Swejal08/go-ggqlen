@@ -6,30 +6,27 @@ type Category {
 }
 
 input NewCategory {
-  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
   categoryName: String! @goTag(key: "validate", value: "required")
 }
 
 input UpdateCategory {
   id: ID! @goTag(key: "validate", value: "required")
-  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
   categoryName: String @goTag(key: "validate", value: "required")
 }
 
 input DeleteCategory {
-  userId: ID! @goTag(key: "validate", value: "required")
   eventId: ID! @goTag(key: "validate", value: "required")
   id: ID! @goTag(key: "validate", value: "required")
 }
 
 extend type Query {
-  getCategories(userId: ID!, eventId: ID!): [Category!]!
+  getCategories: [Category!]! @Authenticate
 }
 
 extend type Mutation {
-  createCategory(input: NewCategory!): Category!
-  updateCategory(input: UpdateCategory!): String
-  deleteCategory(input: DeleteCategory!): String
+  createCategory(input: NewCategory!): Category! @Authenticate
+  updateCategory(input: UpdateCategory!): String @Authenticate
+  deleteCategory(input: DeleteCategory!): String @Authenticate
 }
