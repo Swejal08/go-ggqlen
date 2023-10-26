@@ -25,11 +25,11 @@ input NewUser {
 }
 
 extend type Query {
-  me: User @Authenticate @Authenticate
+  myUserDetail(eventId: ID!): UserDetails @Authenticate
   nonEventMembers(eventId: ID!): [User]! @Authenticate
   userDetails(userId: ID!, eventId: ID!): UserDetails! @Authenticate
 }
 
 extend type Mutation {
-  createUser(input: NewUser!): User! @Authenticate
+  createUser(input: NewUser!): User!
 }

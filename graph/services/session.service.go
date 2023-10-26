@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/Swejal08/go-ggqlen/graph/model"
 	"github.com/Swejal08/go-ggqlen/initializer"
@@ -78,7 +79,6 @@ func GetSession(sessionId string) (*model.Session, error) {
 }
 
 func GetSessionByEventId(eventId string) ([]*model.Session, error) {
-	fmt.Println(eventId)
 	database := initializer.GetDB()
 
 	queryBuilder := initializer.GetQueryBuilder()
@@ -159,6 +159,50 @@ func DeleteSession(sessionId string) error {
 
 	if _, err = database.Exec(sql); err != nil {
 		return fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
+	}
+
+	return nil
+
+}
+
+func CheckSessionOverlap(eventId string, session model.NewSession) error {
+	sessions, err := GetSessionByEventId(eventId)
+
+	inputSessionStartDate, err := time.Parse("2006-01-02 15:04:05", session.StartDate)
+	inputSessionEndDate, err := time.Parse("2006-01-02 15:04:05", session.EndDate)
+
+	if err != nil {
+		return err
+	}
+
+	for _, existingSession := range sessions {
+
+		startDate, err := time.Parse("2006-01-02T15:04:05Z", existingSession.StartDate)
+		endDate, err := time.Parse("2006-01-02T15:04:05Z", existingSession.EndDate)
+
+		if err != nil {
+			return err
+		}
+
+		// formattedStartDate := startDate.Format("2006-01-02 15:04:05")
+		// formattedEndDate := endDate.Format("2006-01-02 15:04:05")
+
+		// parsedStartDate, err := time.Parse("2006-01-02 15:04:05", formattedStartDate)
+		// parsedEndDate, err := time.Parse("2006-01-02 15:04:05", formattedEndDate)
+
+		if err != nil {
+			return err
+		}
+
+		if (inputSessionStartDate.Before(startDate) && inputSessionEndDate.Before(startDate)) ||
+			(inputSessionStartDate.After(endDate) && inputSessionEndDate.After(endDate)) ||
+			inputSessionStartDate.Equal(endDate) {
+
+			continue
+		}
+
+		return fmt.Errorf("Session cannot be created due to ovelapping sessions")
 
 	}
 

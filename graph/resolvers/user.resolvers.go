@@ -40,11 +40,11 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	return createdUser, nil
 }
 
-// Me is the resolver for the me field.
-func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
+// MyUserDetail is the resolver for the myUserDetail field.
+func (r *queryResolver) MyUserDetail(ctx context.Context, eventID string) (*model.UserDetails, error) {
 	userId := ctx.Value("currentUserId").(string)
 
-	user, _ := services.GetUserById(userId)
+	user, _ := services.GetUserDetailsForEvent(userId, eventID)
 
 	if user.ID == "" {
 		return nil, fmt.Errorf("User not found")

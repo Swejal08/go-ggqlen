@@ -31,13 +31,17 @@ func (r *mutationResolver) CreateSession(ctx context.Context, input model.NewSes
 		return nil, accessError
 	}
 
+	err := services.CheckSessionOverlap(input.EventID, input)
+
+	if err != nil {
+		return nil, err
+	}
+
 	session, err := services.CreateSession(input)
 
 	if err != nil {
 		fmt.Println("Session cannot be created", err.Error())
 	}
-
-	fmt.Println(session)
 
 	return session, nil
 }

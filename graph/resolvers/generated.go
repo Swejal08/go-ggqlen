@@ -126,7 +126,7 @@ type ComplexityRoot struct {
 		EventMembers    func(childComplexity int, eventID string) int
 		Events          func(childComplexity int) int
 		GetCategories   func(childComplexity int) int
-		Me              func(childComplexity int) int
+		MyUserDetail    func(childComplexity int, eventID string) int
 		NonEventMembers func(childComplexity int, eventID string) int
 		TotalExpense    func(childComplexity int, eventID string) int
 		UserDetails     func(childComplexity int, userID string, eventID string) int
@@ -187,7 +187,7 @@ type QueryResolver interface {
 	GetCategories(ctx context.Context) ([]*model.Category, error)
 	EventMembers(ctx context.Context, eventID string) ([]*model.EventMembersDetail, error)
 	TotalExpense(ctx context.Context, eventID string) (*model.TotalExpense, error)
-	Me(ctx context.Context) (*model.User, error)
+	MyUserDetail(ctx context.Context, eventID string) (*model.UserDetails, error)
 	NonEventMembers(ctx context.Context, eventID string) ([]*model.User, error)
 	UserDetails(ctx context.Context, userID string, eventID string) (*model.UserDetails, error)
 }
@@ -651,12 +651,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetCategories(childComplexity), true
 
-	case "Query.me":
-		if e.complexity.Query.Me == nil {
+	case "Query.myUserDetail":
+		if e.complexity.Query.MyUserDetail == nil {
 			break
 		}
 
-		return e.complexity.Query.Me(childComplexity), true
+		args, err := ec.field_Query_myUserDetail_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MyUserDetail(childComplexity, args["eventId"].(string)), true
 
 	case "Query.nonEventMembers":
 		if e.complexity.Query.NonEventMembers == nil {
@@ -1207,13 +1212,13 @@ input NewUser {
 }
 
 extend type Query {
-  me: User @Authenticate @Authenticate
+  myUserDetail(eventId: ID!): UserDetails @Authenticate
   nonEventMembers(eventId: ID!): [User]! @Authenticate
   userDetails(userId: ID!, eventId: ID!): UserDetails! @Authenticate
 }
 
 extend type Mutation {
-  createUser(input: NewUser!): User! @Authenticate
+  createUser(input: NewUser!): User!
 }
 `, BuiltIn: false},
 }
@@ -1494,6 +1499,21 @@ func (ec *executionContext) field_Query_eventDetails_args(ctx context.Context, r
 }
 
 func (ec *executionContext) field_Query_eventMembers_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["eventId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["eventId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_myUserDetail_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -4073,28 +4093,8 @@ func (ec *executionContext) _Mutation_createUser(ctx context.Context, field grap
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateUser(rctx, fc.Args["input"].(model.NewUser))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.Authenticate == nil {
-				return nil, errors.New("directive Authenticate is not implemented")
-			}
-			return ec.directives.Authenticate(ctx, nil, directive0)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*model.User); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.User`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateUser(rctx, fc.Args["input"].(model.NewUser))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4538,8 +4538,8 @@ func (ec *executionContext) fieldContext_Query_totalExpense(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_me(ctx, field)
+func (ec *executionContext) _Query_myUserDetail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_myUserDetail(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4553,7 +4553,7 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Me(rctx)
+			return ec.resolvers.Query().MyUserDetail(rctx, fc.Args["eventId"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.Authenticate == nil {
@@ -4561,24 +4561,18 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 			}
 			return ec.directives.Authenticate(ctx, nil, directive0)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.Authenticate == nil {
-				return nil, errors.New("directive Authenticate is not implemented")
-			}
-			return ec.directives.Authenticate(ctx, nil, directive1)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.User); ok {
+		if data, ok := tmp.(*model.UserDetails); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.User`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/Swejal08/go-ggqlen/graph/model.UserDetails`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4587,12 +4581,12 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*model.UserDetails)
 	fc.Result = res
-	return ec.marshalOUser2ᚖgithubᚗcomᚋSwejal08ᚋgoᚑggqlenᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUserDetails2ᚖgithubᚗcomᚋSwejal08ᚋgoᚑggqlenᚋgraphᚋmodelᚐUserDetails(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_me(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_myUserDetail(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -4601,18 +4595,29 @@ func (ec *executionContext) fieldContext_Query_me(ctx context.Context, field gra
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_User_id(ctx, field)
+				return ec.fieldContext_UserDetails_id(ctx, field)
 			case "name":
-				return ec.fieldContext_User_name(ctx, field)
+				return ec.fieldContext_UserDetails_name(ctx, field)
 			case "email":
-				return ec.fieldContext_User_email(ctx, field)
+				return ec.fieldContext_UserDetails_email(ctx, field)
 			case "phone":
-				return ec.fieldContext_User_phone(ctx, field)
-			case "password":
-				return ec.fieldContext_User_password(ctx, field)
+				return ec.fieldContext_UserDetails_phone(ctx, field)
+			case "role":
+				return ec.fieldContext_UserDetails_role(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UserDetails", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_myUserDetail_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -8925,7 +8930,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "me":
+		case "myUserDetail":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -8934,7 +8939,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_me(ctx, field)
+				res = ec._Query_myUserDetail(ctx, field)
 				return res
 			}
 
@@ -10412,6 +10417,13 @@ func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋSwejal08ᚋgoᚑggqle
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOUserDetails2ᚖgithubᚗcomᚋSwejal08ᚋgoᚑggqlenᚋgraphᚋmodelᚐUserDetails(ctx context.Context, sel ast.SelectionSet, v *model.UserDetails) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._UserDetails(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

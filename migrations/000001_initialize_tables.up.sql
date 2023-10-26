@@ -27,8 +27,8 @@ CREATE TABLE "sessions" (
   "id" uuid PRIMARY KEY,
   "event_id" uuid NOT NULL,
   "name" varchar NOT NULL,
-  "start_date" timestamptz NOT NULL,
-  "end_date" timestamptz NOT NULL,
+  "start_date" timestamp NOT NULL,
+  "end_date" timestamp NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT (now())
 );
@@ -48,7 +48,9 @@ CREATE TABLE "expense" (
   "item_name" varchar NOT NULL,
   "cost" bigint NOT NULL,
   "description" varchar,
-  "category_id" uuid NOT NULL
+  "category_id" uuid NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT (now()),
+  "updated_at" timestamptz NOT NULL DEFAULT (now())
 );
 
 CREATE TABLE "category" (
