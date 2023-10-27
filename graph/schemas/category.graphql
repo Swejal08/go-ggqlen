@@ -2,6 +2,7 @@
 
 type Category {
   id: ID!
+  eventId: ID!
   categoryName: String!
 }
 
@@ -22,7 +23,7 @@ input DeleteCategory {
 }
 
 extend type Query {
-  getCategories: [Category!]! @Authenticate
+  getCategories(eventId: ID!): [Category!]! @Authenticate
 }
 
 extend type Mutation {

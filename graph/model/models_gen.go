@@ -16,6 +16,7 @@ type AssignEventMembership struct {
 
 type Category struct {
 	ID           string `json:"id"`
+	EventID      string `json:"eventId"`
 	CategoryName string `json:"categoryName"`
 }
 
@@ -79,6 +80,15 @@ type Expense struct {
 	Cost        int     `json:"cost"`
 	Description *string `json:"description,omitempty"`
 	CategoryID  string  `json:"categoryId"`
+}
+
+type Expenses struct {
+	ID          string    `json:"id"`
+	EventID     string    `json:"eventId"`
+	ItemName    string    `json:"itemName"`
+	Cost        int       `json:"cost"`
+	Description *string   `json:"description,omitempty"`
+	Category    *Category `json:"category"`
 }
 
 type InputLogin struct {

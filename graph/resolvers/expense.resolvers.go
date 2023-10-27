@@ -126,3 +126,51 @@ func (r *queryResolver) TotalExpense(ctx context.Context, eventID string) (*mode
 
 	return totalExpense, nil
 }
+
+// GetExpenses is the resolver for the getExpenses field.
+func (r *queryResolver) GetExpenses(ctx context.Context, eventID string) ([]*model.Expenses, error) {
+	userId := ctx.Value("currentUserId").(string)
+
+	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
+
+	accessError := accessControl.Check(allowedRoles, userId, eventID)
+
+	if accessError != nil {
+		return nil, accessError
+	}
+
+	event, err := services.GetEvent(eventID)
+
+	if event == nil {
+		return nil, err
+	}
+
+	expenses, err := services.GetAllExpenses(eventID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return expenses, nil
+}
+
+// ExpenseDetails is the resolver for the expenseDetails field.
+func (r *queryResolver) ExpenseDetails(ctx context.Context, id string, eventID string) (*model.Expense, error) {
+	userId := ctx.Value("currentUserId").(string)
+
+	allowedRoles := []enums.EventMembershipRole{enums.Admin}
+
+	accessError := accessControl.Check(allowedRoles, userId, eventID)
+
+	if accessError != nil {
+		return nil, accessError
+	}
+
+	expense, err := services.GetExpense(id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return expense, nil
+}

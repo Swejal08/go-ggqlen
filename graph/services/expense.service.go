@@ -79,6 +79,40 @@ func GetExpense(expenseId string) (*model.Expense, error) {
 
 }
 
+func GetExpenseWithCategory(expenseId string) (*model.Expenses, error) {
+	database := initializer.GetDB()
+
+	queryBuilder := initializer.GetQueryBuilder()
+
+	sqlQuery, _, err := queryBuilder.Select(goqu.I("expense.id").As("expense_id"),
+		goqu.I("expense.event_id").As("expense_event_id"), goqu.I("expense.item_name").As("expense_item_name"),
+		goqu.I("expense.cost").As("expense_cost"), goqu.I("expense.description").As("expense_description"),
+		goqu.I("category.id").As("category_id"), goqu.I("category.event_id").As("category_event_id"),
+		goqu.I("category.category_name").As("category_category_name")).From("expense").
+		InnerJoin(goqu.T("category"), goqu.On(goqu.Ex{"expense.category_id": goqu.I("category.id")})).
+		Where(goqu.Ex{"expense.id": expenseId}).ToSQL()
+
+	if err != nil {
+		return nil, fmt.Errorf("An error occurred while generating the SQL", err.Error())
+	}
+
+	row := database.QueryRow(sqlQuery)
+
+	expense := &model.Expenses{}
+
+	if err := row.Scan(&expense.ID, &expense.EventID, &expense.ItemName, &expense.Cost, &expense.Description, &expense.Category.ID, &expense.Category.EventID, &expense.Category.CategoryName); err == nil {
+		fmt.Println(expense, "aaaaaaaaaaaaaaaaaaaa")
+		return expense, nil
+	} else if err == sql.ErrNoRows {
+		fmt.Println("bbbbbbbbbbbbbbbbbbb")
+		return nil, fmt.Errorf("No expense found", err.Error())
+
+	} else {
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
+	}
+}
+
 func UpdateExpense(body model.UpdateExpense) error {
 	database := initializer.GetDB()
 
@@ -124,6 +158,62 @@ func DeleteExpense(expenseId string) error {
 
 	return nil
 
+}
+
+func GetAllExpenses(eventId string) ([]*model.Expenses, error) {
+	database := initializer.GetDB()
+
+	queryBuilder := initializer.GetQueryBuilder()
+
+	sqlQuery, _, err := queryBuilder.Select(goqu.I("expense.id").As("expense_id"),
+		goqu.I("expense.event_id").As("expense_event_id"), goqu.I("expense.item_name").As("expense_item_name"),
+		goqu.I("expense.cost").As("expense_cost"), goqu.I("expense.description").As("expense_description"),
+		goqu.I("category.id").As("category_id"), goqu.I("category.event_id").As("category_event_id"),
+		goqu.I("category.category_name").As("category_category_name")).From("expense").
+		InnerJoin(goqu.T("category"), goqu.On(goqu.Ex{"expense.category_id": goqu.I("category.id")})).
+		Where(goqu.Ex{"expense.event_id": eventId}).ToSQL()
+
+	fmt.Println(sqlQuery)
+
+	rows, err := database.Query(sqlQuery)
+
+	if err != nil {
+		return nil, fmt.Errorf("An error occurred while executing the SQL", err.Error())
+
+	}
+
+	defer rows.Close()
+
+	var expenses []*model.Expenses
+
+	for rows.Next() {
+		expense := &model.Expenses{}
+		category := &model.Category{}
+
+		if err := rows.Scan(&expense.ID, &expense.EventID, &expense.ItemName, &expense.Cost, &expense.Description, &category.ID, &category.EventID, &category.CategoryName); err != nil {
+
+			return nil, fmt.Errorf("An error occurred while scanning rows", err.Error())
+		}
+
+		expenseWithCategories := &model.Expenses{
+			ID:          expense.ID,
+			EventID:     expense.EventID,
+			ItemName:    expense.ItemName,
+			Cost:        expense.Cost,
+			Description: expense.Description,
+			Category:    category,
+		}
+
+		expenses = append(expenses, expenseWithCategories)
+
+	}
+
+	if err := rows.Err(); err != nil {
+
+		return nil, fmt.Errorf("An error occurred after iterating through rows", err.Error())
+	}
+
+	return expenses, nil
 }
 
 func GetTotalExpensesBasedOnCategory(event *model.Event) (*model.TotalExpense, error) {

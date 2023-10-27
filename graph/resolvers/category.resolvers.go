@@ -100,16 +100,16 @@ func (r *mutationResolver) DeleteCategory(ctx context.Context, input model.Delet
 }
 
 // GetCategories is the resolver for the getCategories field.
-func (r *queryResolver) GetCategories(ctx context.Context) ([]*model.Category, error) {
-	// userId := ctx.Value("currentUserId").(string)
+func (r *queryResolver) GetCategories(ctx context.Context, eventID string) ([]*model.Category, error) {
+	userId := ctx.Value("currentUserId").(string)
 
-	// allowedRoles := []enums.EventMembershipRole{enums.Admin}
+	allowedRoles := []enums.EventMembershipRole{enums.Admin}
 
-	// accessError := accessControl.Check(allowedRoles, userId, eventID)
+	accessError := accessControl.Check(allowedRoles, userId, eventID)
 
-	// if accessError != nil {
-	// 	return nil, accessError
-	// }
+	if accessError != nil {
+		return nil, accessError
+	}
 
 	categories, err := services.GetAllCategories()
 

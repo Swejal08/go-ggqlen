@@ -55,6 +55,7 @@ CREATE TABLE "expense" (
 
 CREATE TABLE "category" (
   "id" uuid PRIMARY KEY,
+  "event_id" uuid NOT NULL, 
   "category_name" varchar NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT (now())
@@ -69,3 +70,5 @@ ALTER TABLE "sessions" ADD CONSTRAINT "fk_event_id_sessions" FOREIGN KEY ("event
 ALTER TABLE "expense" ADD CONSTRAINT "fk_event_id_expense" FOREIGN KEY ("event_id") REFERENCES "event" ("id") ON DELETE CASCADE;
 
 ALTER TABLE "expense" ADD CONSTRAINT "fk_category_id_expense" FOREIGN KEY ("category_id") REFERENCES "category" ("id") ON DELETE CASCADE;
+
+ALTER TABLE "category" ADD CONSTRAINT "fk_event_id_category" FOREIGN KEY ("event_id") REFERENCES "event" ("id") ON DELETE CASCADE;

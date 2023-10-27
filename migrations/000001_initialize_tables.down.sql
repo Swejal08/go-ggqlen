@@ -1,5 +1,8 @@
+
 ALTER TABLE "expense" DROP CONSTRAINT "fk_event_id_expense";
 ALTER TABLE "expense" DROP CONSTRAINT "fk_category_id_expense";
+
+ALTER TABLE "category" DROP CONSTRAINT "fk_event_id_category";
 
 ALTER TABLE "event_membership" DROP CONSTRAINT "fk_user_id_event_membership";
 ALTER TABLE "event_membership" DROP CONSTRAINT "fk_event_id_event_membership";

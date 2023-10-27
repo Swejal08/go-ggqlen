@@ -23,8 +23,8 @@ func CreateCategory(body model.NewCategory) (*model.Category, error) {
 	newId := uuid.New()
 
 	ds := queryBuilder.Insert("category").
-		Cols("id", "category_name").
-		Vals(goqu.Vals{newId, body.CategoryName})
+		Cols("id", "event_id", "category_name").
+		Vals(goqu.Vals{newId, body.EventID, body.CategoryName})
 
 	sql, _, err := ds.ToSQL()
 	if err != nil {
@@ -38,6 +38,7 @@ func CreateCategory(body model.NewCategory) (*model.Category, error) {
 
 	newCategory := &model.Category{
 		ID:           newId.String(),
+		EventID:      body.EventID,
 		CategoryName: body.CategoryName,
 	}
 
