@@ -1,0 +1,16 @@
+#import "directive.graphql"
+
+type Login {
+  id: ID!
+  email: String!
+  accessToken: String!
+}
+
+input InputLogin {
+  email: String! @goTag(key: "validate", value: "required")
+  password: String! @goTag(key: "validate", value: "required")
+}
+
+extend type Mutation {
+  login(input: InputLogin!): Login
+}

@@ -1,0 +1,33 @@
+type Session {
+  id: ID!
+  eventId: ID!
+  name: String!
+  startDate: String!
+  endDate: String!
+}
+
+input NewSession {
+  eventId: ID!
+  name: String!
+  startDate: String!
+  endDate: String!
+}
+
+input UpdateSession {
+  id: ID!
+  eventId: ID!
+  name: String
+  startDate: String
+  endDate: String
+}
+
+input DeleteSession {
+  id: ID!
+  eventId: ID!
+}
+
+extend type Mutation {
+  createSession(input: NewSession!): Session! @Authenticate
+  updateSession(input: UpdateSession!): String @Authenticate
+  deleteSession(input: DeleteSession!): String @Authenticate
+}

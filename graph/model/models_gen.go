@@ -2,32 +2,243 @@
 
 package model
 
+import (
+	"fmt"
+	"io"
+	"strconv"
+)
+
+type AssignEventMembership struct {
+	EventID string `json:"eventId" validate:"required"`
+	UserID  string `json:"userId" validate:"required"`
+	Role    Role   `json:"role" validate:"required"`
+}
+
+type Category struct {
+	ID           string `json:"id"`
+	EventID      string `json:"eventId"`
+	CategoryName string `json:"categoryName"`
+}
+
+type CategoryExpense struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Expense int    `json:"expense"`
+}
+
+type DeleteCategory struct {
+	EventID string `json:"eventId" validate:"required"`
+	ID      string `json:"id" validate:"required"`
+}
+
+type DeleteEvent struct {
+	ID string `json:"id" validate:"required"`
+}
+
+type DeleteExpense struct {
+	ID      string `json:"id" validate:"required"`
+	EventID string `json:"eventId" validate:"required"`
+}
+
+type DeleteSession struct {
+	ID      string `json:"id"`
+	EventID string `json:"eventId"`
+}
+
 type Event struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Location    string `json:"location"`
-	StartDate   string `json:"startDate"`
-	EndDate     string `json:"endDate"`
+}
+
+type EventDetails struct {
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Location    string     `json:"location"`
+	Sessions    []*Session `json:"sessions"`
+}
+
+type EventMembersDetail struct {
+	ID   string `json:"id"`
+	Role Role   `json:"role"`
+	User *User  `json:"user,omitempty"`
+}
+
+type EventMembership struct {
+	ID      string `json:"id"`
+	EventID string `json:"eventId"`
+	UserID  string `json:"userId"`
+	Role    Role   `json:"role"`
+}
+
+type Expense struct {
+	ID          string  `json:"id"`
+	EventID     string  `json:"eventId"`
+	ItemName    string  `json:"itemName"`
+	Cost        int     `json:"cost"`
+	Description *string `json:"description,omitempty"`
+	CategoryID  string  `json:"categoryId"`
+}
+
+type Expenses struct {
+	ID          string    `json:"id"`
+	EventID     string    `json:"eventId"`
+	ItemName    string    `json:"itemName"`
+	Cost        int       `json:"cost"`
+	Description *string   `json:"description,omitempty"`
+	Category    *Category `json:"category"`
+}
+
+type InputLogin struct {
+	Email    string `json:"email" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+type Login struct {
+	ID          string `json:"id"`
+	Email       string `json:"email"`
+	AccessToken string `json:"accessToken"`
+}
+
+type NewCategory struct {
+	EventID      string `json:"eventId" validate:"required"`
+	CategoryName string `json:"categoryName" validate:"required"`
 }
 
 type NewEvent struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Location    string `json:"location"`
-	StartDate   string `json:"startDate"`
-	EndDate     string `json:"endDate"`
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description" validate:"required"`
+	Location    string `json:"location" validate:"required"`
+}
+
+type NewExpense struct {
+	EventID     string  `json:"eventId" validate:"required"`
+	ItemName    string  `json:"itemName" validate:"required"`
+	Cost        int     `json:"cost" validate:"required"`
+	Description *string `json:"description,omitempty"`
+	CategoryID  string  `json:"categoryId" validate:"required"`
+}
+
+type NewSession struct {
+	EventID   string `json:"eventId"`
+	Name      string `json:"name"`
+	StartDate string `json:"startDate"`
+	EndDate   string `json:"endDate"`
 }
 
 type NewUser struct {
-	Name  string  `json:"name"`
-	Email string  `json:"email"`
-	Phone *string `json:"phone,omitempty"`
+	Name     string  `json:"name" validate:"required"`
+	Email    string  `json:"email" validate:"required,email"`
+	Phone    *string `json:"phone,omitempty"`
+	Password string  `json:"password"`
+}
+
+type RemoveEventMembership struct {
+	EventID string `json:"eventId" validate:"required"`
+	UserID  string `json:"userId" validate:"required"`
+}
+
+type Session struct {
+	ID        string `json:"id"`
+	EventID   string `json:"eventId"`
+	Name      string `json:"name"`
+	StartDate string `json:"startDate"`
+	EndDate   string `json:"endDate"`
+}
+
+type TotalExpense struct {
+	TotalExpense int                `json:"totalExpense"`
+	Name         string             `json:"name"`
+	Category     []*CategoryExpense `json:"category"`
+}
+
+type UpdateCategory struct {
+	ID           string  `json:"id" validate:"required"`
+	EventID      string  `json:"eventId" validate:"required"`
+	CategoryName *string `json:"categoryName,omitempty" validate:"required"`
+}
+
+type UpdateEvent struct {
+	ID          string  `json:"id" validate:"required"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Location    *string `json:"location,omitempty"`
+}
+
+type UpdateExpense struct {
+	ID          string  `json:"id" validate:"required"`
+	EventID     string  `json:"eventId" validate:"required"`
+	ItemName    *string `json:"itemName,omitempty"`
+	Cost        *int    `json:"cost,omitempty" validate:"int"`
+	Description *string `json:"description,omitempty"`
+	CategoryID  *string `json:"categoryId,omitempty"`
+}
+
+type UpdateSession struct {
+	ID        string  `json:"id"`
+	EventID   string  `json:"eventId"`
+	Name      *string `json:"name,omitempty"`
+	StartDate *string `json:"startDate,omitempty"`
+	EndDate   *string `json:"endDate,omitempty"`
 }
 
 type User struct {
-	ID    string  `json:"id"`
-	Name  string  `json:"name"`
-	Email string  `json:"email"`
-	Phone *string `json:"phone,omitempty"`
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	Phone    *string `json:"phone,omitempty"`
+	Password *string `json:"password,omitempty"`
+}
+
+type UserDetails struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+	Role  Role   `json:"role"`
+}
+
+type Role string
+
+const (
+	RoleContributor Role = "contributor"
+	RoleAdmin       Role = "admin"
+	RoleAttendee    Role = "attendee"
+)
+
+var AllRole = []Role{
+	RoleContributor,
+	RoleAdmin,
+	RoleAttendee,
+}
+
+func (e Role) IsValid() bool {
+	switch e {
+	case RoleContributor, RoleAdmin, RoleAttendee:
+		return true
+	}
+	return false
+}
+
+func (e Role) String() string {
+	return string(e)
+}
+
+func (e *Role) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Role(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Role", str)
+	}
+	return nil
+}
+
+func (e Role) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

@@ -5,16 +5,29 @@ go 1.21.3
 require (
 	github.com/99designs/gqlgen v0.17.39
 	github.com/doug-martin/goqu/v9 v9.18.0
+	github.com/go-chi/cors v1.2.1
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	github.com/vektah/gqlparser/v2 v2.5.10
+	golang.org/x/crypto v0.7.0
+)
+
+require (
+	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/leodido/go-urn v1.2.4 // indirect
+	golang.org/x/net v0.10.0 // indirect
 )
 
 require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/go-chi/chi v1.5.5
+	github.com/go-playground/validator/v10 v10.15.5
+	github.com/google/uuid v1.3.1
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.3 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect

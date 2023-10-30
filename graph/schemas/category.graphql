@@ -1,0 +1,33 @@
+#import "directive.graphql"
+
+type Category {
+  id: ID!
+  eventId: ID!
+  categoryName: String!
+}
+
+input NewCategory {
+  eventId: ID! @goTag(key: "validate", value: "required")
+  categoryName: String! @goTag(key: "validate", value: "required")
+}
+
+input UpdateCategory {
+  id: ID! @goTag(key: "validate", value: "required")
+  eventId: ID! @goTag(key: "validate", value: "required")
+  categoryName: String @goTag(key: "validate", value: "required")
+}
+
+input DeleteCategory {
+  eventId: ID! @goTag(key: "validate", value: "required")
+  id: ID! @goTag(key: "validate", value: "required")
+}
+
+extend type Query {
+  getCategories(eventId: ID!): [Category!]! @Authenticate
+}
+
+extend type Mutation {
+  createCategory(input: NewCategory!): Category! @Authenticate
+  updateCategory(input: UpdateCategory!): String @Authenticate
+  deleteCategory(input: DeleteCategory!): String @Authenticate
+}

@@ -8,47 +8,88 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Swejal08/go-ggqlen/db"
+	accessControl "github.com/Swejal08/go-ggqlen/access-control"
+	"github.com/Swejal08/go-ggqlen/enums"
 	"github.com/Swejal08/go-ggqlen/graph/model"
-	goqu "github.com/doug-martin/goqu/v9"
+	"github.com/Swejal08/go-ggqlen/graph/services"
+	"github.com/Swejal08/go-ggqlen/utils"
 )
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
-	database := db.GetDB()
-
-	queryBuilder := db.GetQuilderBuilder()
-
-	ds := queryBuilder.Insert("user").
-		Cols("name", "email", "phone").
-		Vals(goqu.Vals{input.Name, input.Email, input.Phone})
-
-	sql, _, err := ds.ToSQL()
-	if err != nil {
-		fmt.Println("An error occurred while generating the SQL", err.Error())
-	}
-
-	if _, err = database.Exec(sql); err != nil {
-		fmt.Println("An error occurred while executing the SQL", err.Error())
+	if err := utils.ValidateInput(input); err != nil {
 		return nil, err
 	}
 
+	user, err := services.GetUserByEmail(input.Email)
+
 	if err != nil {
-		fmt.Println("An error occurred while retrieving the last insert ID", err.Error())
 		return nil, err
 	}
 
-	newEvent := &model.User{
-		ID:    "1",
-		Name:  input.Name,
-		Email: input.Email,
-		Phone: input.Phone,
+	if user.ID != "" {
+		return nil, fmt.Errorf("User already exists")
 	}
 
-	return newEvent, nil
+	createdUser, err := services.CreateUser(input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return createdUser, nil
 }
 
-// Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	panic(fmt.Errorf("not implemented: Users - users"))
+// MyUserDetail is the resolver for the myUserDetail field.
+func (r *queryResolver) MyUserDetail(ctx context.Context, eventID string) (*model.UserDetails, error) {
+	userId := ctx.Value("currentUserId").(string)
+
+	user, _ := services.GetUserDetailsForEvent(userId, eventID)
+
+	if user.ID == "" {
+		return nil, fmt.Errorf("User not found")
+	}
+
+	return user, nil
+}
+
+// NonEventMembers is the resolver for the nonEventMembers field.
+func (r *queryResolver) NonEventMembers(ctx context.Context, eventID string) ([]*model.User, error) {
+	userId := ctx.Value("currentUserId").(string)
+
+	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
+
+	accessError := accessControl.Check(allowedRoles, userId, eventID)
+
+	if accessError != nil {
+		return nil, accessError
+	}
+
+	users, err := services.GetNonEventMembers(eventID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// UserDetails is the resolver for the userDetails field.
+func (r *queryResolver) UserDetails(ctx context.Context, userID string, eventID string) (*model.UserDetails, error) {
+	userId := ctx.Value("currentUserId").(string)
+	allowedRoles := []enums.EventMembershipRole{enums.Admin, enums.Contributor}
+
+	accessError := accessControl.Check(allowedRoles, userId, eventID)
+
+	if accessError != nil {
+		return nil, accessError
+	}
+
+	userDetails, err := services.GetUserDetailsForEvent(userID, eventID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return userDetails, nil
 }

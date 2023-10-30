@@ -1,24 +1,45 @@
+#import "directive.graphql"
+#import "sessions.graphql"
+
 type Event {
   id: ID!
   name: String!
   description: String!
   location: String!
-  startDate: String!
-  endDate: String!
 }
 
-input NewEvent {
+type EventDetails {
+  id: ID!
   name: String!
   description: String!
   location: String!
-  startDate: String!
-  endDate: String!
+  sessions: [Session!]!
+}
+
+input NewEvent {
+  name: String! @goTag(key: "validate", value: "required")
+  description: String! @goTag(key: "validate", value: "required")
+  location: String! @goTag(key: "validate", value: "required")
+}
+
+input UpdateEvent {
+  id: ID! @goTag(key: "validate", value: "required")
+  name: String
+  description: String
+  location: String
+}
+
+input DeleteEvent {
+  id: ID! @goTag(key: "validate", value: "required")
 }
 
 type Query {
-  events: [Event!]!
+  events: [Event!]! @Authenticate
+  eventDetails(eventId: ID!): EventDetails @Authenticate
 }
 
 type Mutation {
-  createEvent(input: NewEvent!): Event!
+  createEvent(input: NewEvent!): Event! @Authenticate
+  updateEvent(input: UpdateEvent!): String @Authenticate
+  deleteEvent(input: DeleteEvent!): String @Authenticate
 }

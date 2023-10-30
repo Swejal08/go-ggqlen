@@ -1,0 +1,43 @@
+#import "event.graphql"
+#import "user.graphql"
+#import "directive.graphql"
+#import "user.graphql"
+
+enum Role {
+  contributor
+  admin
+  attendee
+}
+
+type EventMembership {
+  id: ID!
+  eventId: ID!
+  userId: ID!
+  role: Role!
+}
+
+type EventMembersDetail {
+  id: ID!
+  role: Role!
+  user: User
+}
+
+input AssignEventMembership {
+  eventId: ID! @goTag(key: "validate", value: "required")
+  userId: ID! @goTag(key: "validate", value: "required")
+  role: Role! @goTag(key: "validate", value: "required")
+}
+
+input RemoveEventMembership {
+  eventId: ID! @goTag(key: "validate", value: "required")
+  userId: ID! @goTag(key: "validate", value: "required")
+}
+
+extend type Query {
+  eventMembers(eventId: ID!): [EventMembersDetail]! @Authenticate
+}
+
+extend type Mutation {
+  assignEventMembership(input: AssignEventMembership!): String @Authenticate
+  removeEventMembership(input: RemoveEventMembership!): String @Authenticate
+}
